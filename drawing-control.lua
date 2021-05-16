@@ -268,9 +268,14 @@ local function on_lua_shortcut(event)
 	local prototype_name = event.prototype_name
 	if prototype_name == "eraser-bt-shortcut" then
 		set_service_tool(player, "eraser")
-		local rgb_button = player.gui.top.rgb_button
+		local gui = player.gui
+		local rgb_button = gui.top.rgb_button
 		if rgb_button and rgb_button.valid then
 			rgb_button.destroy()
+		end
+		local drawing_settings = gui.left.drawing_settings
+		if drawing_settings and drawing_settings.valid then
+			drawing_settings.destroy()
 		end
 	elseif prototype_name == "recolor-bt-shortcut" then
 		set_service_tool(player, "recolor-bt")
@@ -458,9 +463,12 @@ local function on_player_selected_area(event)
 	local left_top = event.area.left_top
 	local surface = event.surface
 	local tool_name = event.item
+	local is_tool = false
 	if tool_name == "rectangle" then
+		is_tool = true
 		draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player))
 	elseif tool_name == "eraser" then
+		is_tool = true
 		-- TODO: It must be optimized better
 		-- Removes drawings in selected area
 		local heaviness = 0
@@ -488,6 +496,7 @@ local function on_player_selected_area(event)
 			end
 		end
 	elseif tool_name == "recolor-bt" then
+		is_tool = true
 		-- TODO: It must be optimized better
 		-- Removes drawings in selected area
 		local color = get_tool_color(player)
@@ -514,6 +523,17 @@ local function on_player_selected_area(event)
 			heaviness = heaviness + 1
 			if heaviness > 60000 then
 				break
+			end
+		end
+	end
+
+	-- TODO: recheck it. Perhaps, it must be in another place
+	if is_tool then
+		local id = player_last_point[event.player_index]
+		if id then
+			player_last_point[event.player_index] = nil
+			if rendering.is_valid(id) then
+				rendering.destroy(id)
 			end
 		end
 	end
@@ -747,6 +767,11 @@ local function delete_UI_command(cmd)
 			local speech_bubble_menu = gui.center.speech_bubble_menu
 			if speech_bubble_menu and speech_bubble_menu.valid then
 				speech_bubble_menu.destroy()
+			end
+			local drawing_settings = gui.left.drawing_settings
+			if drawing_settings then
+				drawing_settings.destroy()
+				return
 			end
 		end
 	end
