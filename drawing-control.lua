@@ -128,9 +128,9 @@ local function toggle_drawing_settings_gui(player)
 	end
 
 	local color
-	local top = player.gui.top
-	if top.rgb_button then
-		color = top.rgb_button.style.font_color
+	local rgb_button = player.gui.top.rgb_button
+	if rgb_button and rgb_button.valid then
+		color = rgb_button.style.font_color
 	else
 		return
 	end
@@ -216,7 +216,6 @@ local function set_new_tool(player, tool_name, tool_id)
 			cursor_stack.transfer_stack(new_stack)
 			player.hand_location = {inventory = main_inventory.index, slot = new_stack_index}
 		end
-		return true
 	else
 		local count = 12
 		if tool_id == SPEECH_BUBBLE_ID then
@@ -269,6 +268,10 @@ local function on_lua_shortcut(event)
 	local prototype_name = event.prototype_name
 	if prototype_name == "eraser-bt-shortcut" then
 		set_service_tool(player, "eraser")
+		local rgb_button = player.gui.top.rgb_button
+		if rgb_button and rgb_button.valid then
+			rgb_button.destroy()
+		end
 	elseif prototype_name == "recolor-bt-shortcut" then
 		set_service_tool(player, "recolor-bt")
 		create_button(player)
@@ -556,12 +559,12 @@ local function on_gui_value_changed(event)
 	if not (player and player.valid) then return end
 	local color_name, p = element.name:gsub("_DC_slider", '')
 	if p < 1 then return end
-	local button = player.gui.top.rgb_button
-	if not (button and button.valid) then return end
+	local rgb_button = player.gui.top.rgb_button
+	if not (rgb_button and rgb_button.valid) then return end
 
-	local new_color = button.style.font_color
+	local new_color = rgb_button.style.font_color
 	new_color[color_name] = element.slider_value / 255
-	button.style.font_color = new_color
+	rgb_button.style.font_color = new_color
 end
 
 -- Makes invisible previous fiqure
@@ -721,6 +724,34 @@ local function count_all_paintings_command(cmd)
 	player.print("Paintings: " .. #rendering.get_all_ids())
 end
 
+local function delete_UI_command(cmd)
+	if cmd.player_index == 0 then
+		print("Deleted UIs")
+	else
+		local player = game.get_player(cmd.player_index)
+		if not (player and player.valid) then return end
+		if not player.admin then
+			player.print({"command-output.parameters-require-admin"})
+			return
+		end
+		player.print("Deleted UIs")
+	end
+
+	for _, player in pairs(game.players) do
+		if player.valid then
+			local gui = player.gui
+			local rgb_button = gui.top.rgb_button
+			if rgb_button and rgb_button.valid then
+				rgb_button.destroy()
+			end
+			local speech_bubble_menu = gui.center.speech_bubble_menu
+			if speech_bubble_menu and speech_bubble_menu.valid then
+				speech_bubble_menu.destroy()
+			end
+		end
+	end
+end
+
 
 local function set_variables()
 	player_last_point = global.player_last_point
@@ -794,5 +825,6 @@ commands.add_command("remove-paintings", {"brush-tools-commands.description.remo
 commands.add_command("remove-all-paintings", {"brush-tools-commands.description.remove-all-paintings"}, remove_paintings_all_command)
 commands.add_command("count-paintings", {"brush-tools-commands.count-paintings"}, count_paintings_command)
 commands.add_command("count-all-paintings", {"brush-tools-commands.count-all-paintings"}, count_all_paintings_command)
+commands.add_command("delete-UI", {"brush-tools-commands.delete-UI"}, delete_UI_command)
 
 return module

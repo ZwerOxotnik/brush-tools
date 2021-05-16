@@ -185,16 +185,16 @@ data:extend({
 		name = "give-eraser-bt",
 		key_sequence = "SHIFT + E",
 		consuming = "game-only",
-		item_to_spawn = "eraser",
-		action = "spawn-item"
+		-- item_to_spawn = "eraser",
+		-- action = "spawn-item"
 	},
 	{
 		type = "custom-input",
 		name = "give-recolor-bt",
 		key_sequence = "SHIFT + R",
 		consuming = "game-only",
-		item_to_spawn = "recolor-bt",
-		action = "spawn-item"
+		-- item_to_spawn = "recolor-bt",
+		-- action = "spawn-item"
 	},
 	{
 		type = "custom-input",
