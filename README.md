@@ -51,9 +51,9 @@ Brush tools **[ALPHA]**
 
 [Demonstration video](https://www.youtube.com/watch?v=O0utdTVAW8A)
 
-<!-- <p align="center">
-<a href="https://mods.factorio.com/mod/brush-tools/downloads"><strong>Download the mod&nbsp;&nbsp;▶</strong></a>
-</p> -->
+<p align="center">
+  <a href="https://mods.factorio.com/mod/brush-tools/downloads"><strong>Download the mod&nbsp;&nbsp;▶</strong></a>
+</p>
 
 ‼️ Important Links (Translations, Discord Support)
 ---------------------------------------------------------------
