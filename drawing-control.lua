@@ -271,6 +271,7 @@ local function on_lua_shortcut(event)
 		set_service_tool(player, "eraser")
 	elseif prototype_name == "recolor-bt-shortcut" then
 		set_service_tool(player, "recolor-bt")
+		create_button(player)
 	elseif prototype_name == "brush-bt-shortcut" then
 		local tool_name = check_stack(player.cursor_stack)
 		local tool_id = get_id_tool(tool_name)
