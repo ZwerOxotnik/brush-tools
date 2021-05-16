@@ -91,9 +91,9 @@ end
 data:extend({
 	{
 		type = "shortcut",
-		name = "brush-tool-shortcut",
-		associated_control_input = "give-paint-tool",
-		order = "drawing-sc",
+		name = "brush-bt-shortcut",
+		associated_control_input = "give-paint-bt",
+		order = "d-a-brush",
 		action = "lua",
 		toggleable = false,
 		icon =
@@ -105,8 +105,38 @@ data:extend({
 		},
 	},
 	{
+		type = "shortcut",
+		name = "eraser-bt-shortcut",
+		associated_control_input = "give-eraser-bt",
+		order = "d-b-recolor",
+		action = "lua",
+		toggleable = false,
+		icon =
+		{
+			filename = mod_path .. "/icons/eraser.png",
+			priority = "extra-high-no-scale",
+			size = 32,
+			flags = { "gui-icon" }
+		},
+	},
+	{
+		type = "shortcut",
+		name = "recolor-bt-shortcut",
+		associated_control_input = "give-recolor-bt",
+		order = "d-b-recolor",
+		action = "lua",
+		toggleable = false,
+		icon =
+		{
+			filename = mod_path .. "/icons/recolor-bt.png",
+			priority = "extra-high-no-scale",
+			size = 32,
+			flags = { "gui-icon" }
+		},
+	},
+	{
 		type = "custom-input",
-		name = "-size",
+		name = "-size-bt",
 		order = "drawing-",
 		key_sequence = "CONTROL + mouse-wheel-down",
 		alternative_key_sequence = "CONTROL + KP_MINUS",
@@ -114,7 +144,7 @@ data:extend({
 	},
 	{
 		type = "custom-input",
-		name = "+size",
+		name = "+size-bt",
 		order = "drawing+",
 		key_sequence = "CONTROL + mouse-wheel-up",
 		alternative_key_sequence = "CONTROL + KP_PLUS",
@@ -122,7 +152,7 @@ data:extend({
 	},
 	{
 		type = "custom-input",
-		name = "-10size",
+		name = "-10size-bt",
 		order = "drawing-10",
 		key_sequence = "CONTROL + SHIFT + mouse-wheel-down",
 		alternative_key_sequence = "CONTROL + SHIFT + KP_PLUS",
@@ -130,7 +160,7 @@ data:extend({
 	},
 	{
 		type = "custom-input",
-		name = "+10size",
+		name = "+10size-bt",
 		order = "drawing+10",
 		key_sequence = "CONTROL + SHIFT + mouse-wheel-up",
 		alternative_key_sequence = "CONTROL + SHIFT + KP_PLUS",
@@ -152,7 +182,7 @@ data:extend({
 	},
 	{
 		type = "custom-input",
-		name = "give-eraser",
+		name = "give-eraser-bt",
 		key_sequence = "SHIFT + E",
 		consuming = "game-only",
 		item_to_spawn = "eraser",
@@ -160,37 +190,38 @@ data:extend({
 	},
 	{
 		type = "custom-input",
-		name = "give-recolor-tool",
+		name = "give-recolor-bt",
 		key_sequence = "SHIFT + R",
 		consuming = "game-only",
-		item_to_spawn = "recolor-tool",
+		item_to_spawn = "recolor-bt",
 		action = "spawn-item"
 	},
 	{
 		type = "custom-input",
-		name = "give-paint-tool",
+		name = "give-paint-bt",
 		key_sequence = "SHIFT + T",
 		consuming = "game-only"
 	},
 	{
 		type = "custom-input",
-		name = "undo",
+		name = "undo-bt",
 		key_sequence = "SHIFT + Z",
-		consuming = "game-only"
+		consuming = "game-only",
+		localised_name = {"controls.undo"}
 	},
 	{
 		type = "custom-input",
-		name = "redo",
+		name = "redo-bt",
 		key_sequence = "SHIFT + Y",
 		consuming = "game-only"
-	},
+	}
 })
 
 create_paint_tool("pen")
 create_paint_tool("circle", 15)
 create_paint_tool("speech-bubble")
 create_paint_select_tool("rectangle")
-create_paint_select_tool("recolor-tool")
+create_paint_select_tool("recolor-bt")
 create_paint_select_tool("eraser")
 
 local default_gui = data.raw["gui-style"].default

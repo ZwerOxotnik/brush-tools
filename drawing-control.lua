@@ -210,7 +210,7 @@ local function set_new_tool(player, tool_name, tool_id)
 	local main_inventory = player.get_main_inventory()
 	local item_count = player.get_item_count(tool_name)
 	local cursor_stack = player.cursor_stack
-	if item_count > 1 then
+	if item_count > 0 then
 		if player.clear_cursor() then
 			local new_stack, new_stack_index = main_inventory.find_item_stack(tool_name)
 			cursor_stack.transfer_stack(new_stack)
@@ -230,30 +230,61 @@ local function set_new_tool(player, tool_name, tool_id)
 			cursor_stack.transfer_stack(new_stack)
 			player.hand_location = {inventory = main_inventory.index, slot = new_stack_index}
 		else
-			player.print{"drawing.main-inventory-full"}
+			player.print{"cant-clear-cursor"}
 		end
 	end
 	create_button(player)
+end
+
+local function set_service_tool(player, tool_name)
+	local main_inventory = player.get_main_inventory()
+	local item_count = player.get_item_count(tool_name)
+	local cursor_stack = player.cursor_stack
+	if item_count > 0 then
+		if player.clear_cursor() then
+			local new_stack, new_stack_index = main_inventory.find_item_stack(tool_name)
+			cursor_stack.transfer_stack(new_stack)
+			player.hand_location = {inventory = main_inventory.index, slot = new_stack_index}
+		end
+		return true
+	else
+		local stack_spec = {name = tool_name}
+		-- insert into main inventory first, then transfer and set the hand location
+		if main_inventory.can_insert(stack_spec) and player.clear_cursor() then
+			main_inventory.insert(stack_spec)
+			local new_stack, new_stack_index = main_inventory.find_item_stack(tool_name)
+			cursor_stack.transfer_stack(new_stack)
+			player.hand_location = {inventory = main_inventory.index, slot = new_stack_index}
+		else
+			player.print{"cant-clear-cursor"}
+		end
+	end
 end
 
 -- Gives a brush tool to a player
 local function on_lua_shortcut(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
-	if event.prototype_name ~= "brush-tool-shortcut" then return end
-
-	local tool_name = check_stack(player.cursor_stack)
-	local tool_id = get_id_tool(tool_name)
-	if tool_id then
-		-- Select next tool
-		tool_id = tool_id + 1
-		if tool_id > #TOOLS then
-			tool_id = 1
+	
+	local prototype_name = event.prototype_name
+	if prototype_name == "eraser-bt-shortcut" then
+		set_service_tool(player, "eraser")
+	elseif prototype_name == "recolor-bt-shortcut" then
+		set_service_tool(player, "recolor-bt")
+	elseif prototype_name == "brush-bt-shortcut" then
+		local tool_name = check_stack(player.cursor_stack)
+		local tool_id = get_id_tool(tool_name)
+		if tool_id then
+			-- Select next tool
+			tool_id = tool_id + 1
+			if tool_id > #TOOLS then
+				tool_id = 1
+			end
+			tool_name = TOOLS[tool_id]
+			set_new_tool(player, tool_name, tool_id)
+		else
+			set_new_tool(player, "pen", PEN_ID)
 		end
-		tool_name = TOOLS[tool_id]
-		set_new_tool(player, tool_name, tool_id)
-	else
-		set_new_tool(player, "pen", PEN_ID)
 	end
 end
 
@@ -347,7 +378,7 @@ local function on_script_trigger_effect(event)
 end
 
 -- Reduces size of selected brush tool
-local function reduce_size(event, count)
+local function decrease_size(event, count)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
 	local tool_name = check_stack(player.cursor_stack)
@@ -452,7 +483,7 @@ local function on_player_selected_area(event)
 				break
 			end
 		end
-	elseif tool_name == "recolor-tool" then
+	elseif tool_name == "recolor-bt" then
 		-- TODO: It must be optimized better
 		-- Removes drawings in selected area
 		local color = get_tool_color(player)
@@ -736,18 +767,26 @@ module.events = {
 	[defines.events.on_player_changed_surface] = clear_player_data,
 	[defines.events.on_player_respawned] = clear_player_data,
 	[defines.events.on_gui_value_changed] = on_gui_value_changed,
-	["undo"] = undo,
-	["redo"] = redo,
-	["-size"] = function(e) reduce_size(e, 1) end,
-	["+size"] = function(e) increase_size(e, 1) end,
-	["-10size"] = function(e) reduce_size(e, 10) end,
-	["+10size"] = function(e) increase_size(e, 10) end,
+	["undo-bt"] = undo,
+	["redo-bt"] = redo,
+	["-size-bt"] = function(e) decrease_size(e, 1) end,
+	["+size-bt"] = function(e) increase_size(e, 1) end,
+	["-10size-bt"] = function(e) decrease_size(e, 10) end,
+	["+10size-bt"] = function(e) increase_size(e, 10) end,
 	["select-prev-brush-tool"] = select_prev_brush_tool,
 	["select-next-brush-tool"] = select_next_brush_tool,
-	["give-paint-tool"] = function(event)
-		event.prototype_name = "brush-tool-shortcut"
+	["give-paint-bt"] = function(event)
+		event.prototype_name = "brush-bt-shortcut"
 		on_lua_shortcut(event)
-	end
+	end,
+	["give-eraser-bt"] = function(event)
+		event.prototype_name = "eraser-bt-shortcut"
+		on_lua_shortcut(event)
+	end,
+	["give-recolor-bt"] = function(event)
+		event.prototype_name = "recolor-bt-shortcut"
+		on_lua_shortcut(event)
+	end,
 }
 
 commands.add_command("remove-paintings", {"brush-tools-commands.description.remove-paintings"}, remove_paintings_command)
