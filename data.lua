@@ -1,4 +1,4 @@
-local mod_path = "__brush-tools__"
+local MOD_PATH = "__brush-tools__"
 
 local function create_paint_tool(name, cooldown)
 	cooldown = cooldown or 10
@@ -26,7 +26,7 @@ local function create_paint_tool(name, cooldown)
 		{
 			type = "capsule",
 			name = name,
-			icon = mod_path .. "/icons/" .. name .. ".png",
+			icon = MOD_PATH .. "/icons/" .. name .. ".png",
 			subgroup = "tool",
 			order = "b[paint-tool]-a[" .. name .. "]",
 			icon_size = 32, icon_mipmaps = nil,
@@ -63,17 +63,23 @@ local function create_paint_tool(name, cooldown)
 	})
 end
 
-local function create_paint_select_tool(name)
+local function create_paint_select_tool(name, stack_size)
+	local flags
+	if stack_size and stack_size == 1 then
+		flags = {"hidden", "not-stackable", "only-in-cursor", "spawnable"}
+	else
+		flags = {"hidden", "spawnable"}
+	end
 	data:extend(
 	{{
 		type = "selection-tool",
 		name = name,
-		icon = mod_path .. "/icons/" .. name .. ".png",
-		flags = {"spawnable"},
+		icon = MOD_PATH .. "/icons/" .. name .. ".png",
+		flags = flags,
 		icon_size = 32, icon_mipmaps = nil,
 		subgroup = "tool",
 		order = "b[paint-tool]-a[" .. name .. "]",
-		stack_size = 150,
+		stack_size = stack_size or 150,
 		entity_filter_count = nil,
 		tile_filter_count = nil,
 		selection_color = {230, 145, 0},
@@ -98,7 +104,7 @@ data:extend({
 		toggleable = false,
 		icon =
 		{
-			filename = mod_path .. "/icons/pen-shortcut.png",
+			filename = MOD_PATH .. "/icons/pen-shortcut.png",
 			priority = "extra-high-no-scale",
 			size = 32,
 			flags = { "gui-icon" }
@@ -113,7 +119,7 @@ data:extend({
 		toggleable = false,
 		icon =
 		{
-			filename = mod_path .. "/icons/eraser.png",
+			filename = MOD_PATH .. "/icons/eraser.png",
 			priority = "extra-high-no-scale",
 			size = 32,
 			flags = { "gui-icon" }
@@ -128,7 +134,7 @@ data:extend({
 		toggleable = false,
 		icon =
 		{
-			filename = mod_path .. "/icons/recolor-bt.png",
+			filename = MOD_PATH .. "/icons/recolor-bt.png",
 			priority = "extra-high-no-scale",
 			size = 32,
 			flags = { "gui-icon" }
@@ -221,8 +227,8 @@ create_paint_tool("pen")
 create_paint_tool("circle", 15)
 create_paint_tool("speech-bubble")
 create_paint_select_tool("rectangle")
-create_paint_select_tool("recolor-bt")
-create_paint_select_tool("eraser")
+create_paint_select_tool("recolor-bt", 1)
+create_paint_select_tool("eraser", 1)
 
 local default_gui = data.raw["gui-style"].default
 if default_gui.invisible_button == nil then

@@ -237,26 +237,16 @@ end
 
 local function set_service_tool(player, tool_name)
 	local main_inventory = player.get_main_inventory()
-	local item_count = player.get_item_count(tool_name)
 	local cursor_stack = player.cursor_stack
-	if item_count > 0 then
-		if player.clear_cursor() then
-			local new_stack, new_stack_index = main_inventory.find_item_stack(tool_name)
-			cursor_stack.transfer_stack(new_stack)
-			player.hand_location = {inventory = main_inventory.index, slot = new_stack_index}
-		end
-		return true
+	local stack_spec = {name = tool_name}
+	-- insert into main inventory first, then transfer and set the hand location
+	if main_inventory.can_insert(stack_spec) and player.clear_cursor() then
+		main_inventory.insert(stack_spec)
+		local new_stack, new_stack_index = main_inventory.find_item_stack(tool_name)
+		cursor_stack.transfer_stack(new_stack)
+		player.hand_location = {inventory = main_inventory.index, slot = new_stack_index}
 	else
-		local stack_spec = {name = tool_name}
-		-- insert into main inventory first, then transfer and set the hand location
-		if main_inventory.can_insert(stack_spec) and player.clear_cursor() then
-			main_inventory.insert(stack_spec)
-			local new_stack, new_stack_index = main_inventory.find_item_stack(tool_name)
-			cursor_stack.transfer_stack(new_stack)
-			player.hand_location = {inventory = main_inventory.index, slot = new_stack_index}
-		else
-			player.print{"cant-clear-cursor"}
-		end
+		player.print{"cant-clear-cursor"}
 	end
 end
 
