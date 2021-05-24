@@ -10,7 +10,9 @@ local player_prev_fiqures
 
 -- Constants
 -- #########
+local ABS = math.abs
 local MAX_BRUSH_SIZE = 150
+local MAX_DISTANCE = 150
 local TOOLS = {
 	"pen",
 	"circle",
@@ -59,6 +61,10 @@ end
 
 local function find_point(o1, o2, o3)
 		return (o3.x < o1.x and o3.x > o2.x and o3.y < o1.y and o3.y > o2.y)
+end
+
+local function get_distance(o1, o2)
+	return (ABS(o1.x - o2.x)^2 + ABS(o1.y - o2.y)^2)^0.5
 end
 
 local function check_stack(cursor_stack)
@@ -187,7 +193,7 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 	local text = main_table.table_text.textfield.text
 	if text == "" then
 		player.print("Text no found")
-	elseif #text > 400 / (brush_size / 35) then
+	elseif #text > 400 / (brush_size / 14) then
 		player.print("Too long text")
 	else
 		local target_position = {main_table.target.x.caption, main_table.target.y.caption - brush_size / 3.2}
@@ -348,29 +354,38 @@ local function on_script_trigger_effect(event)
 	if prev_point_brush == target_position then return end
 
 	if tool_id == PEN_ID then
-		remeber_fiqure(player_index, rendering.draw_line{
-			surface = event.surface_index,
-			color = color,
-			width = brush_size,
-			from = prev_point_brush,
-			to = target_position,
-			visible = true,
-			draw_on_ground = true,
-			only_in_alt_mode = true
-		})
+		local distance = get_distance(prev_point_brush, target_position)
+		if distance > MAX_DISTANCE then
+			player.print({"brush-tools.respons.big-distance"})
+		else
+			remeber_fiqure(player_index, rendering.draw_line{
+				surface = event.surface_index,
+				color = color,
+				width = brush_size,
+				from = prev_point_brush,
+				to = target_position,
+				visible = true,
+				draw_on_ground = true,
+				only_in_alt_mode = true
+			})
+		end
 	elseif tool_id == CIRCLE_ID then
-		local distance = math.floor(((prev_point_brush.x - target_position.x) ^ 2 + (prev_point_brush.y - target_position.y) ^ 2) ^ 0.5)
-		remeber_fiqure(player_index, rendering.draw_circle{
-			surface = event.surface_index,
-			radius = distance,
-			color = color,
-			filled = brush_size >= MAX_BRUSH_SIZE,
-			width = brush_size,
-			target = prev_point_brush,
-			visible = true,
-			draw_on_ground = true,
-			only_in_alt_mode = true
-		})
+		local distance = get_distance(prev_point_brush, target_position)
+		if distance > (MAX_DISTANCE / 2) then
+			player.print({"brush-tools.respons.big-distance"})
+		else
+			remeber_fiqure(player_index, rendering.draw_circle{
+				surface = event.surface_index,
+				radius = distance,
+				color = color,
+				filled = brush_size >= MAX_BRUSH_SIZE,
+				width = brush_size,
+				target = prev_point_brush,
+				visible = true,
+				draw_on_ground = true,
+				only_in_alt_mode = true
+			})
+		end
 	end
 	rendering.destroy(prev_point_brush_id)
 	player_last_point[player_index] = nil
@@ -456,7 +471,12 @@ local function on_player_selected_area(event)
 	local is_tool = false
 	if tool_name == "rectangle" then
 		is_tool = true
-		draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player))
+		local distance = get_distance(left_top, right_bottom)
+		if distance > MAX_DISTANCE then
+			player.print({"brush-tools.respons.big-distance"})
+		else
+			draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player))
+		end
 	elseif tool_name == "eraser" then
 		is_tool = true
 		-- TODO: It must be optimized better
