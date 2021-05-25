@@ -639,9 +639,12 @@ end
 
 local function delete_player_data(event)
 	local player_index = event.player_index
-	remove_player_invisible_fiqures(player_index)
+	local prev_fiqures = player_prev_fiqures[player_index]
+	if prev_fiqures then
+		remove_player_invisible_fiqures(player_index)
+		player_prev_fiqures[player_index] = nil
+	end
 	player_last_point[player_index] = nil
-	player_prev_fiqures[player_index] = nil
 end
 
 local function clear_player_data(event)
