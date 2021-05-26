@@ -833,7 +833,7 @@ end
 local function update_global_data()
 	global.player_last_point = global.player_last_point or {}
 	global.player_prev_fiqures = global.player_prev_fiqures or {}
-	global.player_check_colors = global.player_check_colors or {}
+	global.player_check_colors = {}
 
 	for player_index, player in pairs(game.players) do
 		global.player_last_point[player_index] = nil
