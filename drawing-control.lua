@@ -127,6 +127,14 @@ local function create_button(player)
 	button.style.font_color = {0, 0, 0, 1}
 end
 
+local function destroy_drawing_settings_gui(player)
+	local gui = player.gui.left
+	if gui.drawing_settings then
+		player_check_colors[player.index] = nil
+		gui.drawing_settings.destroy()
+	end
+end
+
 -- Creates/removes a GUI where a player can adjust the tool settings
 local function toggle_drawing_settings_gui(player)
 	local gui = player.gui.left
@@ -155,15 +163,19 @@ local function toggle_drawing_settings_gui(player)
 	main_table.add{type = "slider", name = "b_DC_slider", style = "blue_slider", maximum_value = 255, value = color.b * 255}
 end
 
--- Creates GUI to setup settings of new text on map
-local function create_speech_bubble_UI(player, target_position)
+local function destroy_speech_bubble_UI(player)
 	local gui = player.gui.center
 	if gui.speech_bubble_menu then
 		gui.speech_bubble_menu.destroy()
 	end
+end
+
+-- Creates GUI to setup settings of new text on map
+local function create_speech_bubble_UI(player, target_position)
+	destroy_speech_bubble_UI(player)
 
 	-- TODO: Refactor style
-	local frame = gui.add{type = "frame", name = "speech_bubble_menu"}
+	local frame = player.gui.center.add{type = "frame", name = "speech_bubble_menu"}
 	local sub_table
 	local main_table = frame.add{type = "table", column_count = 1}
 	sub_table = main_table.add{type = "table", name = "target", column_count = 4}
@@ -678,6 +690,8 @@ local function on_player_joined_game(event)
 
 	player_last_point[player_index] = nil
 	player_prev_fiqures[player_index] = {}
+	destroy_drawing_settings_gui(player)
+	destroy_speech_bubble_UI(player)
 end
 
 -- Adjusting player data
@@ -689,27 +703,24 @@ local function on_player_left_game(event)
 		remove_player_invisible_fiqures(player_index)
 		prev_fiqures = nil
 	end
+
+	local player = game.get_player(player_index)
+	if not (player and player.valid) then return end
+	destroy_drawing_settings_gui(player)
+	destroy_speech_bubble_UI(player)
 end
 
-local function check_color_button()
-	for player_index, _ in pairs(player_check_colors) do
-		local player = game.get_player(player_index)
-		-- if not (player and player.valid) then break end
-
-		local gui = player.gui
-		local rgb_button = gui.top.rgb_button
-		-- if rgb_button and rgb_button.valid then
-			local frame = gui.left.drawing_settings
-			-- if frame and frame.valid then
-				local colors_UI = frame.colors
-				rgb_button.style.font_color = {
-					r = colors_UI.r_DC_slider.slider_value,
-					g = colors_UI.g_DC_slider.slider_value,
-					b = colors_UI.b_DC_slider.slider_value
-				}
-			-- end
-		-- end
-	end
+local function check_color_button(player_index)
+	local player = game.get_player(player_index)
+	local gui = player.gui
+	local rgb_button = gui.top.rgb_button
+	local frame = gui.left.drawing_settings
+	local colors_UI = frame.colors
+	rgb_button.style.font_color = {
+		r = colors_UI.r_DC_slider.slider_value,
+		g = colors_UI.g_DC_slider.slider_value,
+		b = colors_UI.b_DC_slider.slider_value
+	}
 end
 
 local function remove_paintings_command(cmd)
@@ -824,13 +835,15 @@ local function update_global_data()
 	global.player_prev_fiqures = global.player_prev_fiqures or {}
 	global.player_check_colors = global.player_check_colors or {}
 
-	for player_index, _ in pairs(game.players) do
+	for player_index, player in pairs(game.players) do
 		global.player_last_point[player_index] = nil
 		local prev_fiqures = global.player_prev_fiqures[player_index]
 		if prev_fiqures then
 			remove_player_invisible_fiqures(player_index)
 			prev_fiqures = nil
 		end
+		destroy_drawing_settings_gui(player)
+		destroy_speech_bubble_UI(player)
 	end
 end
 
@@ -845,6 +858,7 @@ end)
 
 module.on_configuration_changed = (function()
 	update_global_data()
+	set_variables()
 end)
 
 -- TODO: add support of on_player_muted etc
@@ -885,7 +899,9 @@ module.events = {
 
 module.on_nth_tick = {
 	[50] = function()
-		pcall(check_color_button)
+		for player_index, _ in pairs(player_check_colors) do
+			pcall(check_color_button, player_index)
+		end
 	end
 }
 
