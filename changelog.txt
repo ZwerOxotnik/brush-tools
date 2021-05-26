@@ -1,14 +1,21 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.8
+Date: 2021-05-26
+  Changes:
+    - Optimized sliders (it doesn't lower UPS anymore)
+  Notes:
+    - Refactored
+---------------------------------------------------------------------------------------------------
 Version: 0.5.7
 Date: 2021-05-25
   Bugfixes:
-    - Fixed interactions with some scenarios
+    - Fixed crash under specific cases
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.6
 Date: 2021-05-24
   Changes:
-    - Players can't set too long text on surface
-    - Players can't make too big drawing
+    - Players can't set too long text on surface anymore
+    - Players can't make too big drawing anymore
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.5
 Date: 2021-05-23

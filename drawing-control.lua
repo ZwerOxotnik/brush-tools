@@ -1,3 +1,4 @@
+
 local module = {}
 
 
@@ -5,6 +6,7 @@ local module = {}
 -- ###########
 local player_last_point
 local player_prev_fiqures
+local player_check_colors
 -- ###########
 
 
@@ -59,12 +61,12 @@ local function remeber_fiqure(player_index, new_id)
 	end
 end
 
-local function find_point(o1, o2, o3)
-		return (o3.x < o1.x and o3.x > o2.x and o3.y < o1.y and o3.y > o2.y)
+local function find_point(p1, p2, p3)
+		return (p3.x < p1.x and p3.x > p2.x and p3.y < p1.y and p3.y > p2.y)
 end
 
-local function get_distance(o1, o2)
-	return (ABS(o1.x - o2.x)^2 + ABS(o1.y - o2.y)^2)^0.5
+local function get_distance(p1, p2)
+	return (ABS(p1.x - p2.x)^2 + ABS(p1.y - p2.y)^2)^0.5
 end
 
 local function check_stack(cursor_stack)
@@ -129,6 +131,7 @@ end
 local function toggle_drawing_settings_gui(player)
 	local gui = player.gui.left
 	if gui.drawing_settings then
+		player_check_colors[player.index] = nil
 		gui.drawing_settings.destroy()
 		return
 	end
@@ -141,6 +144,7 @@ local function toggle_drawing_settings_gui(player)
 		return
 	end
 
+	player_check_colors[player.index] = true -- This is necessary to check colors
 	local frame = gui.add{type = "frame", name = "drawing_settings"}
 	local main_table = frame.add{type = "table", name = "colors", column_count = 2}
 	main_table.add{type = "label", caption = "R"}
@@ -264,6 +268,7 @@ local function on_lua_shortcut(event)
 	local prototype_name = event.prototype_name
 	if prototype_name == "eraser-bt-shortcut" then
 		set_service_tool(player, "eraser")
+		player_check_colors[player.index] = nil
 		local gui = player.gui
 		local rgb_button = gui.top.rgb_button
 		if rgb_button and rgb_button.valid then
@@ -563,16 +568,11 @@ local function on_player_alt_selected_area(event)
 	end
 end
 
-local BUTTONS = {
-	["rgb_button"] = true,
-	["speech_bubble_add_text_button"] = true,
-}
 local function on_gui_click(event)
 	local element = event.element
 	if not (element and element.valid) then return end
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
-	if BUTTONS[element.name] == nil then return end
 
 	if element.name == "rgb_button" then
 		toggle_drawing_settings_gui(player)
@@ -581,7 +581,7 @@ local function on_gui_click(event)
 	end
 end
 
--- TODO: refactor, there are too much actions during the events therefore it affects UPS
+-- We use check_color_button() instead of this slow method (left it as a reminder)
 local function on_gui_value_changed(event)
 	local element = event.element
 	if not (element and element.valid) then return end
@@ -645,6 +645,7 @@ local function delete_player_data(event)
 		player_prev_fiqures[player_index] = nil
 	end
 	player_last_point[player_index] = nil
+	player_check_colors[player_index] = nil
 end
 
 local function clear_player_data(event)
@@ -687,6 +688,27 @@ local function on_player_left_game(event)
 	if prev_fiqures then
 		remove_player_invisible_fiqures(player_index)
 		prev_fiqures = nil
+	end
+end
+
+local function check_color_button()
+	for player_index, _ in pairs(player_check_colors) do
+		local player = game.get_player(player_index)
+		-- if not (player and player.valid) then break end
+
+		local gui = player.gui
+		local rgb_button = gui.top.rgb_button
+		-- if rgb_button and rgb_button.valid then
+			local frame = gui.left.drawing_settings
+			-- if frame and frame.valid then
+				local colors_UI = frame.colors
+				rgb_button.style.font_color = {
+					r = colors_UI.r_DC_slider.slider_value,
+					g = colors_UI.g_DC_slider.slider_value,
+					b = colors_UI.b_DC_slider.slider_value
+				}
+			-- end
+		-- end
 	end
 end
 
@@ -772,6 +794,7 @@ local function delete_UI_command(cmd)
 
 	for _, player in pairs(game.players) do
 		if player.valid then
+			player_check_colors[player.index] = nil
 			local gui = player.gui
 			local rgb_button = gui.top.rgb_button
 			if rgb_button and rgb_button.valid then
@@ -784,7 +807,6 @@ local function delete_UI_command(cmd)
 			local drawing_settings = gui.left.drawing_settings
 			if drawing_settings then
 				drawing_settings.destroy()
-				return
 			end
 		end
 	end
@@ -794,11 +816,13 @@ end
 local function set_variables()
 	player_last_point = global.player_last_point
 	player_prev_fiqures = global.player_prev_fiqures
+	player_check_colors = global.player_check_colors
 end
 
 local function update_global_data()
 	global.player_last_point = global.player_last_point or {}
 	global.player_prev_fiqures = global.player_prev_fiqures or {}
+	global.player_check_colors = global.player_check_colors or {}
 
 	for player_index, _ in pairs(game.players) do
 		global.player_last_point[player_index] = nil
@@ -836,7 +860,7 @@ module.events = {
 	[defines.events.on_player_removed] = delete_player_data,
 	[defines.events.on_player_changed_surface] = clear_player_data,
 	[defines.events.on_player_respawned] = clear_player_data,
-	[defines.events.on_gui_value_changed] = on_gui_value_changed,
+	-- [defines.events.on_gui_value_changed] = on_gui_value_changed, -- please, do not use it. It impacts UPS significantly
 	["undo-bt"] = undo,
 	["redo-bt"] = redo,
 	["-size-bt"] = function(e) decrease_size(e, 1) end,
@@ -857,6 +881,12 @@ module.events = {
 		event.prototype_name = "recolor-bt-shortcut"
 		on_lua_shortcut(event)
 	end,
+}
+
+module.on_nth_tick = {
+	[50] = function()
+		pcall(check_color_button)
+	end
 }
 
 commands.add_command("remove-paintings", {"brush-tools-commands.description.remove-paintings"}, remove_paintings_command)
