@@ -831,12 +831,11 @@ local function set_variables()
 end
 
 local function update_global_data()
-	global.player_last_point = global.player_last_point or {}
+	global.player_last_point = {}
 	global.player_prev_fiqures = global.player_prev_fiqures or {}
 	global.player_check_colors = {}
 
 	for player_index, player in pairs(game.players) do
-		global.player_last_point[player_index] = nil
 		local prev_fiqures = global.player_prev_fiqures[player_index]
 		if prev_fiqures then
 			remove_player_invisible_fiqures(player_index)
