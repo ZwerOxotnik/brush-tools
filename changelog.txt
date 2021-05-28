@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.10
+Date: 2021-05-28
+  Bugfixes:
+    - Fixed crush when a player trying to change brush tools during respawn
+    - Fixed a "typo" in English localization
+  Features:
+    - Added dev mode
+  Changes:
+    - Deleting UI of text during other events like on respawn etc
+  Notes:
+    - Refactored some code
+---------------------------------------------------------------------------------------------------
 Version: 0.5.9
 Date: 2021-05-26
   Bugfixes:
@@ -12,7 +24,7 @@ Date: 2021-05-26
   Changes:
     - Optimized sliders (it doesn't lower UPS anymore)
   Notes:
-    - Refactored
+    - Refactored some code
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.7
 Date: 2021-05-25

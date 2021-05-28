@@ -107,12 +107,24 @@ local function draw_rectangle(surface, player, left_top, right_bottom, color, fi
 		left_top = left_top,
 		right_bottom = right_bottom,
 		color = color,
-		filled = filled,
 		width = brush_size,
+		filled = filled,
 		visible = true,
 		draw_on_ground = true,
 		only_in_alt_mode = true
 	})
+	if player.mod_settings["brush-tools_dev-mode"].value then
+		local message = "rendering.draw_rectangle{\n" ..
+			"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
+			"	left_top = {" .. left_top.x .. ", " .. left_top.y .. "},\n" ..
+			"	right_bottom = {" .. right_bottom.x .. ", " .. right_bottom.y .. "},\n" ..
+			"	color = " .. serpent.line(color) .. ",\n" ..		
+			"	width = " .. brush_size .. ",\n" ..
+			"	filled = " .. tostring(filled) .. ",\n" ..
+			"	visible = true,\n" ..
+			"})\n"
+		game.write_file("brush-tools-output.lua", message, true, player.index)
+	end
 end
 
 -- Creates a button on top for player to show tool color
@@ -128,10 +140,10 @@ local function create_button(player)
 end
 
 local function destroy_drawing_settings_gui(player)
-	local gui = player.gui.left
-	if gui.drawing_settings then
+	local gui = player.gui.left.drawing_settings
+	if gui then
 		player_check_colors[player.index] = nil
-		gui.drawing_settings.destroy()
+		gui.destroy()
 	end
 end
 
@@ -164,9 +176,9 @@ local function toggle_drawing_settings_gui(player)
 end
 
 local function destroy_speech_bubble_UI(player)
-	local gui = player.gui.center
-	if gui.speech_bubble_menu then
-		gui.speech_bubble_menu.destroy()
+	local gui = player.gui.center.speech_bubble_menu
+	if gui then
+		gui.destroy()
 	end
 end
 
@@ -223,6 +235,18 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 			alignment = "center",
 			only_in_alt_mode = true
 		})
+		if player.mod_settings["brush-tools_dev-mode"].value then
+			local message = "rendering.draw_text{\n" ..
+				"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
+				"	color = " .. serpent.line(color) .. ",\n" ..
+				"	scale = " .. brush_size .. ",\n" ..
+				"	target = {" .. target_position[1] .. ", " .. target_position[2] .. "},\n" ..
+				"	text = \"" .. text .. "\",\n" ..
+				"	visible = true,\n" ..
+				"	alignment = \"center\",\n" ..
+				"})\n"
+			game.write_file("brush-tools-output.lua", message, true, player.index)
+		end
 	end
 	player.gui.center.speech_bubble_menu.destroy()
 end
@@ -230,6 +254,7 @@ end
 -- Sets a brush tool for a player
 local function set_new_tool(player, tool_name, tool_id)
 	local main_inventory = player.get_main_inventory()
+	if not (main_inventory and main_inventory.valid) then return end
 	local item_count = player.get_item_count(tool_name)
 	local cursor_stack = player.cursor_stack
 	if item_count > 0 then
@@ -259,6 +284,7 @@ end
 
 local function set_service_tool(player, tool_name)
 	local main_inventory = player.get_main_inventory()
+	if not (main_inventory and main_inventory.valid) then return end
 	local cursor_stack = player.cursor_stack
 	local stack_spec = {name = tool_name}
 	-- insert into main inventory first, then transfer and set the hand location
@@ -385,6 +411,17 @@ local function on_script_trigger_effect(event)
 				draw_on_ground = true,
 				only_in_alt_mode = true
 			})
+			if player.mod_settings["brush-tools_dev-mode"].value then
+				local message = "rendering.draw_line{\n" ..
+					"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
+					"	color = " .. serpent.line(color) .. ",\n" ..
+					"	width = " .. brush_size .. ",\n" ..
+					"	from = {" .. prev_point_brush.x .. ", " .. prev_point_brush.y .. "},\n" ..
+					"	to = {" .. target_position.x .. ", " .. target_position.y .. "},\n" ..
+					"	visible = true,\n" ..
+					"})\n"
+				game.write_file("brush-tools-output.lua", message, true, player.index)
+			end
 		end
 	elseif tool_id == CIRCLE_ID then
 		local distance = get_distance(prev_point_brush, target_position)
@@ -402,6 +439,18 @@ local function on_script_trigger_effect(event)
 				draw_on_ground = true,
 				only_in_alt_mode = true
 			})
+			if player.mod_settings["brush-tools_dev-mode"].value then
+				local message = "rendering.draw_circle{\n" ..
+					"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
+					"	radius = " .. distance .. ",\n" ..
+					"	color = " .. serpent.line(color) .. ",\n" ..
+					"	filled = " .. tostring(brush_size >= MAX_BRUSH_SIZE) .. ",\n" ..
+					"	width = " .. brush_size .. ",\n" ..
+					"	target = {" .. prev_point_brush.x .. ", " .. prev_point_brush.y .. "},\n" ..
+					"	visible = true,\n" ..
+					"})\n"
+				game.write_file("brush-tools-output.lua", message, true, player.index)
+			end
 		end
 	end
 	rendering.destroy(prev_point_brush_id)
@@ -662,9 +711,13 @@ end
 
 local function clear_player_data(event)
 	local player_index = event.player_index
+	local player = game.get_player(player_index)
+	if not(player and player.valid) then return end
+
 	remove_player_invisible_fiqures(player_index)
 	player_last_point[player_index] = nil
 	player_prev_fiqures[player_index] = {}
+	destroy_speech_bubble_UI(player)
 end
 
 -- Adjusting player data
@@ -811,20 +864,14 @@ local function delete_UI_command(cmd)
 			if rgb_button and rgb_button.valid then
 				rgb_button.destroy()
 			end
-			local speech_bubble_menu = gui.center.speech_bubble_menu
-			if speech_bubble_menu and speech_bubble_menu.valid then
-				speech_bubble_menu.destroy()
-			end
-			local drawing_settings = gui.left.drawing_settings
-			if drawing_settings then
-				drawing_settings.destroy()
-			end
+			destroy_drawing_settings_gui(player)
+			destroy_speech_bubble_UI(player)
 		end
 	end
 end
 
 
-local function set_variables()
+local function link_data()
 	player_last_point = global.player_last_point
 	player_prev_fiqures = global.player_prev_fiqures
 	player_check_colors = global.player_check_colors
@@ -832,10 +879,10 @@ end
 
 local function update_global_data()
 	global.player_last_point = {}
-	global.player_prev_fiqures = global.player_prev_fiqures or {}
 	global.player_check_colors = {}
+	global.player_prev_fiqures = global.player_prev_fiqures or {}
 
-	for player_index, player in pairs(game.players) do
+	for player_index, player in pairs(game.players) do -- TODO: replace it with global.player_prev_fiqures
 		local prev_fiqures = global.player_prev_fiqures[player_index]
 		if prev_fiqures then
 			remove_player_invisible_fiqures(player_index)
@@ -848,16 +895,16 @@ end
 
 module.on_init = (function()
 	update_global_data()
-	set_variables()
+	link_data()
 end)
 
 module.on_load = (function()
-	set_variables()
+	link_data()
 end)
 
 module.on_configuration_changed = (function()
 	update_global_data()
-	set_variables()
+	link_data()
 end)
 
 -- TODO: add support of on_player_muted etc
