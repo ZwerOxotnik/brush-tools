@@ -642,7 +642,7 @@ local function on_gui_click(event)
 	end
 end
 
--- We use check_color_button() instead of this slow method (left it as a reminder)
+-- We use update_color_button() instead of this slow method (left it as a reminder)
 local function on_gui_value_changed(event)
 	local element = event.element
 	if not (element and element.valid) then return end
@@ -763,7 +763,7 @@ local function on_player_left_game(event)
 	destroy_speech_bubble_UI(player)
 end
 
-local function check_color_button(player_index)
+local function update_color_button(player_index)
 	local player = game.get_player(player_index)
 	local gui = player.gui
 	local rgb_button = gui.top.rgb_button
@@ -946,7 +946,7 @@ module.events = {
 module.on_nth_tick = {
 	[50] = function()
 		for player_index, _ in pairs(player_check_colors) do
-			pcall(check_color_button, player_index)
+			pcall(update_color_button, player_index)
 		end
 	end
 }
