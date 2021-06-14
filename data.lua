@@ -33,31 +33,31 @@ local function create_paint_tool(name, cooldown)
 			stack_size = 150,
 			capsule_action =
 			{
-			type = "throw",
-			attack_parameters =
-			{
-				type = "projectile",
-				activation_type = "throw",
-				ammo_category = "capsule",
-				cooldown = cooldown,
-				projectile_creation_distance = 0,
-				range = 64,
-				ammo_type =
+				type = "throw",
+				attack_parameters =
 				{
-				category = "capsule",
-				target_type = "position",
-				action =
-				{{
-					type = "direct",
-					action_delivery =
-					{{
-						type = "projectile",
-						projectile = name,
-						starting_speed = 100
-					}}
-				}}
+					type = "projectile",
+					activation_type = "throw",
+					ammo_category = "capsule",
+					cooldown = cooldown,
+					projectile_creation_distance = 0,
+					range = 64,
+					ammo_type =
+					{
+						category = "capsule",
+						target_type = "position",
+						action =
+						{{
+							type = "direct",
+							action_delivery =
+							{{
+								type = "projectile",
+								projectile = name,
+								starting_speed = 100
+							}}
+						}}
+					}
 				}
-			}
 			}
 		}
 	})
@@ -145,7 +145,7 @@ data:extend({
 		name = "-size-bt",
 		order = "drawing-",
 		key_sequence = "CONTROL + mouse-wheel-down",
-		alternative_key_sequence = "CONTROL + KP_MINUS",
+		alternative_key_sequence = "CONTROL + KP_DIVIDE",
 		consuming = "game-only"
 	},
 	{
@@ -153,7 +153,7 @@ data:extend({
 		name = "+size-bt",
 		order = "drawing+",
 		key_sequence = "CONTROL + mouse-wheel-up",
-		alternative_key_sequence = "CONTROL + KP_PLUS",
+		alternative_key_sequence = "CONTROL + KP_MULTIPLY",
 		consuming = "game-only"
 	},
 	{
@@ -161,7 +161,7 @@ data:extend({
 		name = "-10size-bt",
 		order = "drawing-10",
 		key_sequence = "CONTROL + SHIFT + mouse-wheel-down",
-		alternative_key_sequence = "CONTROL + SHIFT + KP_PLUS",
+		alternative_key_sequence = "CONTROL + SHIFT + KP_MULTIPLY",
 		consuming = "game-only"
 	},
 	{
@@ -169,21 +169,21 @@ data:extend({
 		name = "+10size-bt",
 		order = "drawing+10",
 		key_sequence = "CONTROL + SHIFT + mouse-wheel-up",
-		alternative_key_sequence = "CONTROL + SHIFT + KP_PLUS",
+		alternative_key_sequence = "CONTROL + SHIFT + KP_MULTIPLY",
 		consuming = "game-only"
 	},
 	{
 		type = "custom-input",
 		name = "select-prev-brush-tool",
 		order = "drawing-change-tool-",
-		key_sequence = "KP_MINUS",
+		key_sequence = "KP_DIVIDE",
 		consuming = "game-only"
 	},
 	{
 		type = "custom-input",
 		name = "select-next-brush-tool",
 		order = "drawing-change-tool+",
-		key_sequence = "KP_PLUS",
+		key_sequence = "KP_MULTIPLY",
 		consuming = "game-only"
 	},
 	{
