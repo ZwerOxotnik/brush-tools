@@ -338,7 +338,7 @@ end
 
 -- Trying to draw something by using a brush tool
 local function on_script_trigger_effect(event)
-	if not event.source_entity then return end -- doesn't work with players without characters
+	if not event.source_entity then return end -- doesn't work with players who don't have characters
 	local tool_name = event.effect_id
 	local tool_id = get_id_tool(tool_name)
 	if tool_id == nil then return end
