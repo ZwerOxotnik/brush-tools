@@ -62,7 +62,7 @@ local function remeber_fiqure(player_index, new_id)
 end
 
 local function find_point(p1, p2, p3)
-		return (p3.x < p1.x and p3.x > p2.x and p3.y < p1.y and p3.y > p2.y)
+	return (p3.x < p1.x and p3.x > p2.x and p3.y < p1.y and p3.y > p2.y)
 end
 
 local function get_distance(p1, p2)
@@ -118,11 +118,11 @@ local function draw_rectangle(surface, player, left_top, right_bottom, color, fi
 			"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
 			"	left_top = {" .. left_top.x .. ", " .. left_top.y .. "},\n" ..
 			"	right_bottom = {" .. right_bottom.x .. ", " .. right_bottom.y .. "},\n" ..
-			"	color = " .. serpent.line(color) .. ",\n" ..		
+			"	color = " .. serpent.line(color) .. ",\n" ..
 			"	width = " .. brush_size .. ",\n" ..
 			"	filled = " .. tostring(filled) .. ",\n" ..
 			"	visible = true,\n" ..
-			"})\n"
+			"}\n"
 		game.write_file("brush-tools-output.lua", message, true, player.index)
 	end
 end
@@ -244,7 +244,7 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 				"	text = \"" .. text .. "\",\n" ..
 				"	visible = true,\n" ..
 				"	alignment = \"center\",\n" ..
-				"})\n"
+				"}\n"
 			game.write_file("brush-tools-output.lua", message, true, player.index)
 		end
 	end
@@ -302,7 +302,7 @@ end
 local function on_lua_shortcut(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
-	
+
 	local prototype_name = event.prototype_name
 	if prototype_name == "eraser-bt-shortcut" then
 		set_service_tool(player, "eraser")
@@ -419,7 +419,7 @@ local function on_script_trigger_effect(event)
 					"	from = {" .. prev_point_brush.x .. ", " .. prev_point_brush.y .. "},\n" ..
 					"	to = {" .. target_position.x .. ", " .. target_position.y .. "},\n" ..
 					"	visible = true,\n" ..
-					"})\n"
+					"}\n"
 				game.write_file("brush-tools-output.lua", message, true, player.index)
 			end
 		end
@@ -448,7 +448,7 @@ local function on_script_trigger_effect(event)
 					"	width = " .. brush_size .. ",\n" ..
 					"	target = {" .. prev_point_brush.x .. ", " .. prev_point_brush.y .. "},\n" ..
 					"	visible = true,\n" ..
-					"})\n"
+					"}\n"
 				game.write_file("brush-tools-output.lua", message, true, player.index)
 			end
 		end
@@ -463,7 +463,7 @@ local function decrease_size(event, count)
 	if not (player and player.valid) then return end
 	local tool_name = check_stack(player.cursor_stack)
 	if not (tool_name and get_id_tool(tool_name)) then return end
-	
+
 	local brush_size = player.get_item_count(tool_name)
 	if brush_size <= 1 then
 		return
@@ -955,6 +955,6 @@ commands.add_command("remove-paintings", {"brush-tools-commands.description.remo
 commands.add_command("remove-all-paintings", {"brush-tools-commands.description.remove-all-paintings"}, remove_paintings_all_command)
 commands.add_command("count-paintings", {"brush-tools-commands.count-paintings"}, count_paintings_command)
 commands.add_command("count-all-paintings", {"brush-tools-commands.count-all-paintings"}, count_all_paintings_command)
-commands.add_command("delete-UI", {"brush-tools-commands.delete-UI"}, delete_UI_command)
+commands.add_command("delete-brush-tools-UI", {"brush-tools-commands.delete_UI"}, delete_UI_command)
 
 return module
