@@ -396,6 +396,9 @@ local function on_script_trigger_effect(event)
 	local prev_point_brush = rendering.get_target(prev_point_brush_id).position
 	if prev_point_brush == target_position then return end
 
+	-- Leaved it as a hotfix (player_prev_fiqures[player_index] can be nil in some cases in singleplayer)
+	player_prev_fiqures[player_index] = player_prev_fiqures[player_index] or {}
+
 	if tool_id == PEN_ID then
 		local distance = get_distance(prev_point_brush, target_position)
 		if distance > MAX_DISTANCE then
@@ -541,6 +544,10 @@ local function on_player_selected_area(event)
 		if distance > MAX_DISTANCE then
 			player.print({"brush-tools.respons.big-distance"})
 		else
+
+			-- Leaved it as a hotfix (player_prev_fiqures[player_index] can be nil in some cases in singleplayer)
+			player_prev_fiqures[player.index] = player_prev_fiqures[player.index] or {}
+
 			draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player))
 		end
 	elseif tool_name == "eraser" then
@@ -625,6 +632,9 @@ local function on_player_alt_selected_area(event)
 	local surface = event.surface
 	local tool_name = event.item
 	if tool_name == "rectangle" then
+		-- Leaved it as a hotfix (player_prev_fiqures[player_index] can be nil in some cases in singleplayer)
+		player_prev_fiqures[player.index] = player_prev_fiqures[player.index] or {}
+
 		draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player), true)
 	end
 end

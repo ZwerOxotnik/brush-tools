@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.15
+Date: 2021-06-15
+  Bugfixes:
+    - Improved stability in singleplayer
+    - Fixed conflict with rotating
+  Changes:
+    - Changed hotkeys CONTROL + E/R/T instead of SHIFT + E/R/T
+---------------------------------------------------------------------------------------------------
 Version: 0.5.14
 Date: 2021-06-14
   Bugfixes:

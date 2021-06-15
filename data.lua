@@ -189,7 +189,7 @@ data:extend({
 	{
 		type = "custom-input",
 		name = "give-eraser-bt",
-		key_sequence = "SHIFT + E",
+		key_sequence = "CONTROL + E",
 		consuming = "game-only",
 		-- item_to_spawn = "eraser",
 		-- action = "spawn-item"
@@ -197,7 +197,7 @@ data:extend({
 	{
 		type = "custom-input",
 		name = "give-recolor-bt",
-		key_sequence = "SHIFT + R",
+		key_sequence = "CONTROL + R",
 		consuming = "game-only",
 		-- item_to_spawn = "recolor-bt",
 		-- action = "spawn-item"
@@ -205,7 +205,7 @@ data:extend({
 	{
 		type = "custom-input",
 		name = "give-paint-bt",
-		key_sequence = "SHIFT + T",
+		key_sequence = "CONTROL + T",
 		consuming = "game-only"
 	},
 	{
