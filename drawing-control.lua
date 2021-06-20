@@ -2,16 +2,19 @@
 local module = {}
 
 
--- Global data
--- ###########
+--#region Singleplayer data
+local sp_prev_fiqures = {}
+---#endregion
+
+
+--#region Global data
 local player_last_point
 local player_prev_fiqures
 local player_check_colors
--- ###########
+---#endregion
 
 
--- Constants
--- #########
+--#region Constants
 local ABS = math.abs
 local MAX_BRUSH_SIZE = 150
 local MAX_DISTANCE = 150
@@ -25,9 +28,13 @@ PEN_ID = 1
 CIRCLE_ID = 2
 RECTANGLE_ID = 3
 SPEECH_BUBBLE_ID = 4
--- #########
+--#endregion
 
 
+--#region Utilities
+
+---@param name string
+---@return number
 local function get_id_tool(name)
 	for id, tool_name in pairs(TOOLS) do
 		if tool_name == name then
@@ -36,8 +43,10 @@ local function get_id_tool(name)
 	end
 end
 
+---@param	player_index number
+---@param new_id number
 local function remeber_fiqure(player_index, new_id)
-	local prev_fiqures = player_prev_fiqures[player_index]
+	local prev_fiqures = player_prev_fiqures[player_index] or sp_prev_fiqures
 
 	for key, id in pairs(prev_fiqures) do
 		if id and rendering.is_valid(id) then
@@ -69,12 +78,14 @@ local function get_distance(p1, p2)
 	return (ABS(p1.x - p2.x)^2 + ABS(p1.y - p2.y)^2)^0.5
 end
 
+---@return string
 local function check_stack(cursor_stack)
 	if cursor_stack and cursor_stack.valid_for_read then
 		return cursor_stack.name
 	end
 end
 
+---@return table
 local function get_tool_color(player)
 	local color
 	local rgb_button = player.gui.top.rgb_button
@@ -85,8 +96,9 @@ local function get_tool_color(player)
 	return color
 end
 
+---@param player_index number
 local function remove_player_invisible_fiqures(player_index)
-	local prev_fiqures = player_prev_fiqures[player_index]
+	local prev_fiqures = player_prev_fiqures[player_index] or sp_prev_fiqures
 	for i=#prev_fiqures, 1, -1 do
 		local id = prev_fiqures[i]
 		if id and rendering.is_valid(id) then
@@ -97,6 +109,8 @@ local function remove_player_invisible_fiqures(player_index)
 	end
 end
 
+---@param surface	table
+---@param color table
 local function draw_rectangle(surface, player, left_top, right_bottom, color, filled)
 	local brush_size = player.get_item_count("rectangle")
 	if not filled then
@@ -252,6 +266,8 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 end
 
 -- Sets a brush tool for a player
+---@param tool_name string
+---@param tool_id number
 local function set_new_tool(player, tool_name, tool_id)
 	local main_inventory = player.get_main_inventory()
 	if not (main_inventory and main_inventory.valid) then return end
@@ -282,6 +298,7 @@ local function set_new_tool(player, tool_name, tool_id)
 	create_button(player)
 end
 
+---@param tool_name string
 local function set_service_tool(player, tool_name)
 	local main_inventory = player.get_main_inventory()
 	if not (main_inventory and main_inventory.valid) then return end
@@ -297,6 +314,11 @@ local function set_service_tool(player, tool_name)
 		player.print{"cant-clear-cursor"}
 	end
 end
+
+--#endregion
+
+
+--#region Functions of events
 
 -- Gives a brush tool to a player
 local function on_lua_shortcut(event)
@@ -395,9 +417,6 @@ local function on_script_trigger_effect(event)
 
 	local prev_point_brush = rendering.get_target(prev_point_brush_id).position
 	if prev_point_brush == target_position then return end
-
-	-- Leaved it as a hotfix (player_prev_fiqures[player_index] can be nil in some cases in singleplayer)
-	player_prev_fiqures[player_index] = player_prev_fiqures[player_index] or {}
 
 	if tool_id == PEN_ID then
 		local distance = get_distance(prev_point_brush, target_position)
@@ -544,10 +563,6 @@ local function on_player_selected_area(event)
 		if distance > MAX_DISTANCE then
 			player.print({"brush-tools.respons.big-distance"})
 		else
-
-			-- Leaved it as a hotfix (player_prev_fiqures[player_index] can be nil in some cases in singleplayer)
-			player_prev_fiqures[player.index] = player_prev_fiqures[player.index] or {}
-
 			draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player))
 		end
 	elseif tool_name == "eraser" then
@@ -632,9 +647,6 @@ local function on_player_alt_selected_area(event)
 	local surface = event.surface
 	local tool_name = event.item
 	if tool_name == "rectangle" then
-		-- Leaved it as a hotfix (player_prev_fiqures[player_index] can be nil in some cases in singleplayer)
-		player_prev_fiqures[player.index] = player_prev_fiqures[player.index] or {}
-
 		draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player), true)
 	end
 end
@@ -673,7 +685,7 @@ local function undo(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
 
-	local prev_fiqures = player_prev_fiqures[event.player_index]
+	local prev_fiqures = player_prev_fiqures[event.player_index] or sp_prev_fiqures
 	for i=#prev_fiqures, 1, -1 do
 		local id = prev_fiqures[i]
 		if id and rendering.is_valid(id) then
@@ -693,7 +705,7 @@ local function redo(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
 
-	local prev_fiqures = player_prev_fiqures[event.player_index]
+	local prev_fiqures = player_prev_fiqures[event.player_index] or sp_prev_fiqures
 	for i=1, #prev_fiqures, 1 do
 		local id = prev_fiqures[i]
 		if id and rendering.is_valid(id) then
@@ -773,6 +785,7 @@ local function on_player_left_game(event)
 	destroy_speech_bubble_UI(player)
 end
 
+---@param player_index number
 local function update_color_button(player_index)
 	local player = game.get_player(player_index)
 	local gui = player.gui
@@ -785,6 +798,11 @@ local function update_color_button(player_index)
 		b = colors_UI.b_DC_slider.slider_value
 	}
 end
+
+--#endregion
+
+
+--#region Commands
 
 local function remove_paintings_command(cmd)
 	local player = game.get_player(cmd.player_index)
@@ -880,6 +898,10 @@ local function delete_UI_command(cmd)
 	end
 end
 
+--#endregion
+
+
+--#region Pre-game stage
 
 local function link_data()
 	player_last_point = global.player_last_point
@@ -917,7 +939,11 @@ module.on_configuration_changed = (function()
 	link_data()
 end)
 
+--#endregion
+
+
 -- TODO: add support of on_player_muted etc
+---@type table<number|string, function>
 module.events = {
 	[defines.events.on_lua_shortcut] = on_lua_shortcut,
 	[defines.events.on_script_trigger_effect] = on_script_trigger_effect,
@@ -953,6 +979,7 @@ module.events = {
 	end,
 }
 
+---@type table<number, function>
 module.on_nth_tick = {
 	[50] = function()
 		for player_index, _ in pairs(player_check_colors) do

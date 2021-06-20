@@ -1,5 +1,6 @@
 local MOD_PATH = "__brush-tools__"
 
+
 local function create_paint_tool(name, cooldown)
 	cooldown = cooldown or 10
 	data:extend(
@@ -63,6 +64,8 @@ local function create_paint_tool(name, cooldown)
 	})
 end
 
+
+---@param stack_size number
 local function create_paint_select_tool(name, stack_size)
 	local flags
 	if stack_size and stack_size == 1 then
@@ -92,6 +95,7 @@ local function create_paint_select_tool(name, stack_size)
 		alt_selection_cursor_box_type = "not-allowed"
 	}})
 end
+
 
 -- Creates hotkeys
 data:extend({
@@ -223,12 +227,14 @@ data:extend({
 	}
 })
 
+
 create_paint_tool("pen")
 create_paint_tool("circle", 15)
 create_paint_tool("speech-bubble")
 create_paint_select_tool("rectangle")
 create_paint_select_tool("recolor-bt", 1)
 create_paint_select_tool("eraser", 1)
+
 
 local default_gui = data.raw["gui-style"].default
 if default_gui.invisible_button == nil then

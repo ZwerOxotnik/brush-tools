@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.16
+Date: 2021-06-20
+  Changes:
+    - Added Dutch translation (thanks to @jordditters on crowdin)
+    - Changed bugfix from 0.5.15 (Singeplayer might be less stable or not. Please, report any bugs)
+  Notes:
+    - Translations: https://crowdin.com/project/factorio-mods-localization (thank you for contributions, I really appreciate it)
+---------------------------------------------------------------------------------------------------
 Version: 0.5.15
 Date: 2021-06-15
   Bugfixes:
@@ -28,7 +36,7 @@ Date: 2021-06-06
   Changes:
     - Updated German translation and other translations
   Notes:
-    - Translations: https://crowdin.com/project/factorio-mods-localization  (thank you for contributions, I really appreciate it)
+    - Translations: https://crowdin.com/project/factorio-mods-localization (thank you for contributions, I really appreciate it)
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.11
 Date: 2021-05-30
