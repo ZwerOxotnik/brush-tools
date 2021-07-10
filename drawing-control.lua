@@ -50,7 +50,7 @@ local function remeber_fiqure(player_index, new_id)
 
 	for key, id in pairs(prev_fiqures) do
 		if id and rendering.is_valid(id) then
-			if rendering.get_visible(id) == false then
+			if rendering.get_visible(id) == false then -- TODO: check
 				rendering.destroy(id)
 				prev_fiqures[key] = nil
 			end
@@ -337,7 +337,7 @@ local function erase_from_surface(surface, right_bottom, left_top)
 	-- Removes drawings in selected area
 	local heaviness = 0
 	for _, id in pairs(rendering.get_all_ids()) do
-		if rendering.get_surface(id) == surface then
+		if rendering.is_valid(id) and rendering.get_surface(id) == surface then
 			local position = rendering.get_target(id)
 			if position then
 				if find_point(right_bottom, left_top, position.position) then
@@ -345,20 +345,16 @@ local function erase_from_surface(surface, right_bottom, left_top)
 				end
 			else
 				local position1 = rendering.get_left_top(id) or rendering.get_from(id)
-				if position1 then
-					local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
-					if position2 then
-						if find_point(right_bottom, left_top, position1.position)
-							and find_point(right_bottom, left_top, position2.position)
-						then
-							rendering.destroy(id)
-						end
-					end
+				local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
+				if find_point(right_bottom, left_top, position1.position)
+					and find_point(right_bottom, left_top, position2.position)
+				then
+					rendering.destroy(id)
 				end
 			end
-			heaviness = heaviness + 11
+			heaviness = heaviness + 10
 		end
-		heaviness = heaviness + 1
+		heaviness = heaviness + 2
 		if heaviness > 60000 then
 			break
 		end
@@ -626,7 +622,7 @@ local function on_player_selected_area(event)
 		if color == nil then return end
 		local heaviness = 0
 		for _, id in pairs(rendering.get_all_ids()) do
-			if rendering.get_surface(id) == surface then
+			if rendering.is_valid(id) and rendering.get_surface(id) == surface then
 				local position = rendering.get_target(id)
 				if position then -- TODO: recheck
 					if find_point(right_bottom, left_top, position.position) then
@@ -643,7 +639,7 @@ local function on_player_selected_area(event)
 				end
 				heaviness = heaviness + 10
 			end
-			heaviness = heaviness + 1
+			heaviness = heaviness + 2
 			if heaviness > 60000 then
 				break
 			end
@@ -839,10 +835,10 @@ local function remove_paintings_command(cmd)
 	local heaviness = 0
 	local surface = player.surface
 	for _, id in pairs(rendering.get_all_ids()) do
-		if rendering.get_surface(id) == surface then
+		ifrendering.get_surface(id) == surface then -- TODO: check
 			rendering.destroy(id)
 		end
-		heaviness = heaviness + 2
+		heaviness = heaviness + 3
 		if heaviness > 60000 then
 			break
 		end
