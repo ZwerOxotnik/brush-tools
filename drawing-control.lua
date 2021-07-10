@@ -24,10 +24,10 @@ local TOOLS = {
 	"rectangle",
 	"speech-bubble"
 }
-PEN_ID = 1
-CIRCLE_ID = 2
-RECTANGLE_ID = 3
-SPEECH_BUBBLE_ID = 4
+local PEN_ID = 1
+local CIRCLE_ID = 2
+-- local RECTANGLE_ID = 3
+local SPEECH_BUBBLE_ID = 4
 --#endregion
 
 
@@ -85,6 +85,7 @@ local function check_stack(cursor_stack)
 	end
 end
 
+---@param player table LuaPlayer
 ---@return table
 local function get_tool_color(player)
 	local color
@@ -109,8 +110,12 @@ local function remove_player_invisible_fiqures(player_index)
 	end
 end
 
----@param surface	table
----@param color table
+---@param surface table LuaSurface
+---@param player table LuaPlayer
+---@param left_top table position
+---@param right_bottom table position
+---@param color table color
+---@param filled boolean
 local function draw_rectangle(surface, player, left_top, right_bottom, color, filled)
 	local brush_size = player.get_item_count("rectangle")
 	if not filled then
@@ -141,7 +146,8 @@ local function draw_rectangle(surface, player, left_top, right_bottom, color, fi
 	end
 end
 
--- Creates a button on top for player to show tool color
+---Creates a button on top for player to show tool color
+---@param player table LuaPlayer
 local function create_button(player)
 	local gui = player.gui.top
 	if gui.rgb_button then
@@ -153,6 +159,7 @@ local function create_button(player)
 	button.style.font_color = {0, 0, 0, 1}
 end
 
+---@param player table LuaPlayer
 local function destroy_drawing_settings_gui(player)
 	local gui = player.gui.left.drawing_settings
 	if gui then
@@ -161,7 +168,8 @@ local function destroy_drawing_settings_gui(player)
 	end
 end
 
--- Creates/removes a GUI where a player can adjust the tool settings
+---Creates/removes a GUI where a player can adjust the tool settings
+---@param player table LuaPlayer
 local function toggle_drawing_settings_gui(player)
 	local gui = player.gui.left
 	if gui.drawing_settings then
@@ -196,7 +204,9 @@ local function destroy_speech_bubble_UI(player)
 	end
 end
 
--- Creates GUI to setup settings of new text on map
+---Creates GUI to setup settings of new text on map
+---@param player table LuaPlayer
+---@param target_position table position
 local function create_speech_bubble_UI(player, target_position)
 	destroy_speech_bubble_UI(player)
 
@@ -220,7 +230,9 @@ local function create_speech_bubble_UI(player, target_position)
 	button.style.horizontally_stretchable = true
 end
 
--- Creates text using LuaRendering
+---Creates text using LuaRendering
+---@param player table LuaPlayer
+---@param speech_bubble_add_text_button table GuiElement
 local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 	local color = get_tool_color(player)
 	if color == nil then return end
@@ -265,7 +277,8 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 	player.gui.center.speech_bubble_menu.destroy()
 end
 
--- Sets a brush tool for a player
+---Sets a brush tool for a player
+---@param player table LuaPlayer
 ---@param tool_name string
 ---@param tool_id number
 local function set_new_tool(player, tool_name, tool_id)
@@ -298,6 +311,7 @@ local function set_new_tool(player, tool_name, tool_id)
 	create_button(player)
 end
 
+---@param player table LuaPlayer
 ---@param tool_name string
 local function set_service_tool(player, tool_name)
 	local main_inventory = player.get_main_inventory()
@@ -315,12 +329,48 @@ local function set_service_tool(player, tool_name)
 	end
 end
 
+---@param surface table LuaSurface
+---@param right_bottom table position
+---@param left_top table position
+local function erase_from_surface(surface, right_bottom, left_top)
+	-- TODO: It must be optimized better
+	-- Removes drawings in selected area
+	local heaviness = 0
+	for _, id in pairs(rendering.get_all_ids()) do
+		if rendering.get_surface(id) == surface then
+			local position = rendering.get_target(id)
+			if position then
+				if find_point(right_bottom, left_top, position.position) then
+					rendering.destroy(id)
+				end
+			else
+				local position1 = rendering.get_left_top(id) or rendering.get_from(id)
+				if position1 then
+					local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
+					if position2 then
+						if find_point(right_bottom, left_top, position1.position)
+							and find_point(right_bottom, left_top, position2.position)
+						then
+							rendering.destroy(id)
+						end
+					end
+				end
+			end
+			heaviness = heaviness + 11
+		end
+		heaviness = heaviness + 1
+		if heaviness > 60000 then
+			break
+		end
+	end
+end
+
 --#endregion
 
 
 --#region Functions of events
 
--- Gives a brush tool to a player
+---Gives a brush tool to a player
 local function on_lua_shortcut(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
@@ -358,7 +408,7 @@ local function on_lua_shortcut(event)
 	end
 end
 
--- Trying to draw something by using a brush tool
+---Trying to draw something by using a brush tool
 local function on_script_trigger_effect(event)
 	if not event.source_entity then return end -- doesn't work with players who don't have characters
 	local tool_name = event.effect_id
@@ -479,7 +529,7 @@ local function on_script_trigger_effect(event)
 	player_last_point[player_index] = nil
 end
 
--- Reduces size of selected brush tool
+---Reduces size of selected brush tool
 local function decrease_size(event, count)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
@@ -495,7 +545,7 @@ local function decrease_size(event, count)
 	player.remove_item({name = tool_name, count = count})
 end
 
--- Increases size of selected brush tool
+---Increases size of selected brush tool
 local function increase_size(event, count)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
@@ -547,7 +597,7 @@ local function select_next_brush_tool(event)
 	set_new_tool(player, tool_name, tool_id)
 end
 
--- Trying to draw or paint or remove fiqures
+---Trying to draw or paint or remove fiqures
 local function on_player_selected_area(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
@@ -567,36 +617,7 @@ local function on_player_selected_area(event)
 		end
 	elseif tool_name == "eraser" then
 		is_tool = true
-		-- TODO: It must be optimized better
-		-- Removes drawings in selected area
-		local heaviness = 0
-		for _, id in pairs(rendering.get_all_ids()) do
-			if rendering.get_surface(id) == surface then
-				local position = rendering.get_target(id)
-				if position then
-					if find_point(right_bottom, left_top, position.position) then
-						rendering.destroy(id)
-					end
-				else
-					local position1 = rendering.get_left_top(id) or rendering.get_from(id)
-					if position1 then
-						local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
-						if position2 then
-							if find_point(right_bottom, left_top, position1.position)
-								and find_point(right_bottom, left_top, position2.position)
-							then
-								rendering.destroy(id)
-							end
-						end
-					end
-				end
-				heaviness = heaviness + 11
-			end
-			heaviness = heaviness + 1
-			if heaviness > 60000 then
-				break
-			end
-		end
+		erase_from_surface(surface, right_bottom, left_top)
 	elseif tool_name == "recolor-bt" then
 		is_tool = true
 		-- TODO: It must be optimized better
@@ -641,7 +662,7 @@ local function on_player_selected_area(event)
 	end
 end
 
--- Draw a rectangle
+---Draw a rectangle
 local function on_player_alt_selected_area(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
@@ -668,23 +689,23 @@ local function on_gui_click(event)
 	end
 end
 
--- We use update_color_button() instead of this slow method (left it as a reminder)
-local function on_gui_value_changed(event)
-	local element = event.element
-	if not (element and element.valid) then return end
-	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
-	local color_name, p = element.name:gsub("_DC_slider", '')
-	if p < 1 then return end
-	local rgb_button = player.gui.top.rgb_button
-	if not (rgb_button and rgb_button.valid) then return end
+---We use update_color_button() instead of this slow method (left it as a reminder)
+-- local function on_gui_value_changed(event)
+-- 	local element = event.element
+-- 	if not (element and element.valid) then return end
+-- 	local player = game.get_player(event.player_index)
+-- 	if not (player and player.valid) then return end
+-- 	local color_name, p = element.name:gsub("_DC_slider", '')
+-- 	if p < 1 then return end
+-- 	local rgb_button = player.gui.top.rgb_button
+-- 	if not (rgb_button and rgb_button.valid) then return end
 
-	local new_color = rgb_button.style.font_color
-	new_color[color_name] = element.slider_value / 255
-	rgb_button.style.font_color = new_color
-end
+-- 	local new_color = rgb_button.style.font_color
+-- 	new_color[color_name] = element.slider_value / 255
+-- 	rgb_button.style.font_color = new_color
+-- end
 
--- Makes invisible previous fiqure
+---Makes invisible previous fiqure
 local function undo(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
@@ -704,7 +725,7 @@ local function undo(event)
 	end
 end
 
--- Makes visible last invisible fiqure
+---Makes visible last invisible fiqure
 local function redo(event)
 	local player = game.get_player(event.player_index)
 	if not (player and player.valid) then return end
@@ -746,7 +767,7 @@ local function clear_player_data(event)
 	destroy_speech_bubble_UI(player)
 end
 
--- Adjusting player data
+---Adjusting player data
 local function on_player_created(event)
 	local player_index = event.player_index
 	local player = game.get_player(player_index)
@@ -756,7 +777,7 @@ local function on_player_created(event)
 	player_prev_fiqures[player_index] = {}
 end
 
--- Adjusting player data
+---Adjusting player data
 local function on_player_joined_game(event)
 	local player_index = event.player_index
 	local player = game.get_player(player_index)
@@ -773,7 +794,7 @@ local function on_player_joined_game(event)
 	destroy_speech_bubble_UI(player)
 end
 
--- Adjusting player data
+---Adjusting player data
 local function on_player_left_game(event)
 	local player_index = event.player_index
 	player_last_point[player_index] = nil
@@ -794,8 +815,7 @@ local function update_color_button(player_index)
 	local player = game.get_player(player_index)
 	local gui = player.gui
 	local rgb_button = gui.top.rgb_button
-	local frame = gui.left.drawing_settings
-	local colors_UI = frame.colors
+	local colors_UI = gui.left.drawing_settings.colors
 	rgb_button.style.font_color = {
 		r = colors_UI.r_DC_slider.slider_value,
 		g = colors_UI.g_DC_slider.slider_value,
@@ -947,6 +967,7 @@ end)
 
 
 -- TODO: add support of on_player_muted etc
+
 ---@type table<number|string, function>
 module.events = {
 	[defines.events.on_lua_shortcut] = on_lua_shortcut,
