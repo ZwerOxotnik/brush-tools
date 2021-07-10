@@ -579,14 +579,18 @@ local function on_player_selected_area(event)
 					end
 				else
 					local position1 = rendering.get_left_top(id) or rendering.get_from(id)
-					local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
-					if find_point(right_bottom, left_top, position1.position)
-						and find_point(right_bottom, left_top, position2.position)
-					then
-						rendering.destroy(id)
+					if position1 then
+						local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
+						if position2 then
+							if find_point(right_bottom, left_top, position1.position)
+								and find_point(right_bottom, left_top, position2.position)
+							then
+								rendering.destroy(id)
+							end
+						end
 					end
 				end
-				heaviness = heaviness + 10
+				heaviness = heaviness + 11
 			end
 			heaviness = heaviness + 1
 			if heaviness > 60000 then
@@ -603,7 +607,7 @@ local function on_player_selected_area(event)
 		for _, id in pairs(rendering.get_all_ids()) do
 			if rendering.get_surface(id) == surface then
 				local position = rendering.get_target(id)
-				if position then
+				if position then -- TODO: recheck
 					if find_point(right_bottom, left_top, position.position) then
 						rendering.set_color(id, color)
 					end
