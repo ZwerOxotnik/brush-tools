@@ -800,7 +800,7 @@ local function on_player_left_game(event)
 	local prev_fiqures = player_prev_fiqures[player_index]
 	if prev_fiqures then
 		remove_player_invisible_fiqures(player_index)
-		prev_fiqures = nil
+		player_prev_fiqures[player_index] = nil
 	end
 
 	local player = game.get_player(player_index)
@@ -941,7 +941,7 @@ local function update_global_data()
 		local prev_fiqures = global.player_prev_fiqures[player_index]
 		if prev_fiqures then
 			remove_player_invisible_fiqures(player_index)
-			prev_fiqures = nil
+			global.player_prev_fiqures[player_index] = nil
 		end
 		destroy_drawing_settings_gui(player)
 		destroy_speech_bubble_UI(player)
