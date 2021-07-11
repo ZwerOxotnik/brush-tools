@@ -835,7 +835,7 @@ local function remove_paintings_command(cmd)
 	local heaviness = 0
 	local surface = player.surface
 	for _, id in pairs(rendering.get_all_ids()) do
-		ifrendering.get_surface(id) == surface then -- TODO: check
+		if rendering.get_surface(id) == surface then -- TODO: check
 			rendering.destroy(id)
 		end
 		heaviness = heaviness + 3
