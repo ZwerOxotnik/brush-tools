@@ -344,15 +344,18 @@ local function erase_from_surface(surface, right_bottom, left_top)
 					rendering.destroy(id)
 				end
 			else
+				-- TODO: optimize this!
 				local position1 = rendering.get_left_top(id) or rendering.get_from(id)
 				local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
-				if find_point(right_bottom, left_top, position1.position)
-					and find_point(right_bottom, left_top, position2.position)
-				then
-					rendering.destroy(id)
+				if position1 and position1.position and position2 and position2.position then
+					if find_point(right_bottom, left_top, position1.position)
+						and find_point(right_bottom, left_top, position2.position)
+					then
+						rendering.destroy(id)
+					end
 				end
 			end
-			heaviness = heaviness + 10
+			heaviness = heaviness + 14
 		end
 		heaviness = heaviness + 2
 		if heaviness > 60000 then
