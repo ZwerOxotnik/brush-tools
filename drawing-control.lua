@@ -329,27 +329,27 @@ local function set_service_tool(player, tool_name)
 	end
 end
 
+---Removes drawings in selected area
 ---@param surface table LuaSurface
 ---@param right_bottom table position
 ---@param left_top table position
 local function erase_from_surface(surface, right_bottom, left_top)
 	-- TODO: It must be optimized better
-	-- Removes drawings in selected area
 	local heaviness = 0
 	for _, id in pairs(rendering.get_all_ids()) do
 		if rendering.is_valid(id) and rendering.get_surface(id) == surface then
-			local position = rendering.get_target(id)
-			if position then
-				if find_point(right_bottom, left_top, position.position) then
+			local target = rendering.get_target(id) -- https://lua-api.factorio.com/1.1.35/Concepts.html#ScriptRenderTarget
+			if target then
+				if find_point(right_bottom, left_top, target.position) then
 					rendering.destroy(id)
 				end
 			else
 				-- TODO: optimize this!
-				local position1 = rendering.get_left_top(id) or rendering.get_from(id)
-				local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
-				if position1 and position1.position and position2 and position2.position then
-					if find_point(right_bottom, left_top, position1.position)
-						and find_point(right_bottom, left_top, position2.position)
+				local target1 = rendering.get_left_top(id) or rendering.get_from(id)
+				local target2 = rendering.get_right_bottom(id) or rendering.get_to(id)
+				if target1 and target1.position and target2 and target2.position then
+					if find_point(right_bottom, left_top, target1.position)
+						and find_point(right_bottom, left_top, target2.position)
 					then
 						rendering.destroy(id)
 					end
