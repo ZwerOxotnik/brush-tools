@@ -11,6 +11,7 @@ local sp_prev_fiqures = {}
 local player_last_point
 local player_prev_fiqures
 local player_check_colors
+local player_last_entity
 ---#endregion
 
 
@@ -345,8 +346,14 @@ local function erase_from_surface(surface, right_bottom, left_top)
 		if rendering.is_valid(id) and rendering.get_surface(id) == surface then
 			local target = rendering.get_target(id) -- https://lua-api.factorio.com/1.1.35/Concepts.html#ScriptRenderTarget
 			if target then
-				if find_point(right_bottom, left_top, target.position) then
-					rendering.destroy(id)
+				if target.entity then
+					if find_point(right_bottom, left_top, target.entity.position) then
+						rendering.destroy(id)
+					end
+				else
+					if find_point(right_bottom, left_top, target.position) then
+						rendering.destroy(id)
+					end
 				end
 			else
 				-- TODO: optimize this!
@@ -441,36 +448,50 @@ local function on_script_trigger_effect(event)
 	local color = get_tool_color(player)
 	if color == nil then return end
 	local player_index = player.index
-	local prev_point_brush_id = player_last_point[player_index]
-	-- TODO: recheck it for circle
-	if prev_point_brush_id == nil then
-		player_last_point[player_index] = rendering.draw_circle{
-			surface = event.surface_index,
-			radius = 0.2,
-			color = color,
-			filled = true,
-			target = target_position,
-			players = {player},
-			time_to_live = 60 * 20,
-			draw_on_ground = true
-		}
-		return
-	elseif rendering.is_valid(prev_point_brush_id) == false then
-		player_last_point[player_index] = rendering.draw_circle{
-			surface = event.surface_index,
-			radius = 0.2,
-			color = color,
-			filled = true,
-			target = target_position,
-			players = {player},
-			time_to_live = 60 * 20,
-			draw_on_ground = true
-		}
-		return
+
+	local is_entity = false
+	if tool_id == LIGHT_ID then
+		local selected_entity = player.selected
+		if player_last_entity[player_index] then
+			is_entity = true
+		elseif selected_entity and not selected_entity.type ~= "entity-ghost" then
+			player_last_entity[player_index] = selected_entity
+			return
+		end
 	end
 
-	local prev_point_brush = rendering.get_target(prev_point_brush_id).position
-	if prev_point_brush == target_position then return end
+	local prev_point_brush
+	local prev_point_brush_id = player_last_point[player_index]
+	if is_entity == false then
+		-- TODO: recheck it for circle
+		if prev_point_brush_id == nil then
+			player_last_point[player_index] = rendering.draw_circle{
+				surface = event.surface_index,
+				radius = 0.2,
+				color = color,
+				filled = true,
+				target = target_position,
+				players = {player},
+				time_to_live = 60 * 20,
+				draw_on_ground = true
+			}
+			return
+		elseif rendering.is_valid(prev_point_brush_id) == false then
+			player_last_point[player_index] = rendering.draw_circle{
+				surface = event.surface_index,
+				radius = 0.2,
+				color = color,
+				filled = true,
+				target = target_position,
+				players = {player},
+				time_to_live = 60 * 20,
+				draw_on_ground = true
+			}
+			return
+		end
+		prev_point_brush = rendering.get_target(prev_point_brush_id).position
+		if prev_point_brush == target_position then return end
+	end
 
 	if tool_id == PEN_ID then
 		local distance = get_distance(prev_point_brush, target_position)
@@ -530,7 +551,8 @@ local function on_script_trigger_effect(event)
 		end
 	elseif tool_id == LIGHT_ID then
 		if player.admin then
-			local distance = get_distance(prev_point_brush, target_position)
+			local target = player_last_entity[player_index] or prev_point_brush
+			local distance = get_distance(target.position or target, target_position)
 			if distance > (MAX_DISTANCE / 2) then
 				player.print({"brush-tools.respons.big-distance"})
 			else
@@ -543,11 +565,11 @@ local function on_script_trigger_effect(event)
 						scale = distance / 3.4,
 						color = color,
 						intensity = brush_size / MAX_LIGHT_TOOL_SIZE,
-						target = prev_point_brush,
+						target = target,
 						visible = true,
 						only_in_alt_mode = false
 					})
-					if player.mod_settings["brush-tools_dev-mode"].value then
+					if prev_point_brush and player.mod_settings["brush-tools_dev-mode"].value then
 						local message = "rendering.draw_light{\n" ..
 							"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
 							" sprite = \"utility/light_cone\",\n" ..
@@ -565,8 +587,12 @@ local function on_script_trigger_effect(event)
 			player.print({"command-output.parameters-require-admin"})
 		end
 	end
-	rendering.destroy(prev_point_brush_id)
-	player_last_point[player_index] = nil
+
+	if prev_point_brush_id then
+		rendering.destroy(prev_point_brush_id)
+		player_last_point[player_index] = nil
+	end
+	player_last_entity[player_index] = nil
 end
 
 ---Reduces size of selected brush tool
@@ -667,21 +693,29 @@ local function on_player_selected_area(event)
 		local heaviness = 0
 		for _, id in pairs(rendering.get_all_ids()) do
 			if rendering.is_valid(id) and rendering.get_surface(id) == surface then
-				local position = rendering.get_target(id)
-				if position then -- TODO: recheck
-					if find_point(right_bottom, left_top, position.position) then
-						rendering.set_color(id, color)
+				local target = rendering.get_target(id)
+				if target then -- TODO: recheck
+					if target.entity then
+						if find_point(right_bottom, left_top, target.entity.position) then
+							rendering.set_color(id, color)
+						end
+					else
+						if find_point(right_bottom, left_top, target.position) then
+							rendering.set_color(id, color)
+						end
 					end
 				else
-					local position1 = rendering.get_left_top(id) or rendering.get_from(id)
-					local position2 = rendering.get_right_bottom(id) or rendering.get_to(id)
-					if find_point(right_bottom, left_top, position1.position)
-						and find_point(right_bottom, left_top, position2.position)
-					then
-						rendering.set_color(id, color)
+					local target1 = rendering.get_left_top(id) or rendering.get_from(id)
+					local target2 = rendering.get_right_bottom(id) or rendering.get_to(id)
+					if target1 and target1.position and target2 and target2.position then
+						if find_point(right_bottom, left_top, target1.position)
+							and find_point(right_bottom, left_top, target2.position)
+						then
+							rendering.set_color(id, color)
+						end
 					end
 				end
-				heaviness = heaviness + 10
+				heaviness = heaviness + 14
 			end
 			heaviness = heaviness + 2
 			if heaviness > 60000 then
@@ -793,6 +827,7 @@ local function delete_player_data(event)
 		player_prev_fiqures[player_index] = nil
 	end
 	player_last_point[player_index] = nil
+	player_last_entity[player_index] = nil
 	player_check_colors[player_index] = nil
 end
 
@@ -803,6 +838,7 @@ local function clear_player_data(event)
 
 	remove_player_invisible_fiqures(player_index)
 	player_last_point[player_index] = nil
+	player_last_entity[player_index] = nil
 	player_prev_fiqures[player_index] = {}
 	destroy_speech_bubble_UI(player)
 end
@@ -814,6 +850,7 @@ local function on_player_created(event)
 	if not (player and player.valid) then return end
 
 	player_last_point[player_index] = nil
+	player_last_entity[player_index] = nil
 	player_prev_fiqures[player_index] = {}
 end
 
@@ -828,6 +865,7 @@ local function on_player_joined_game(event)
 	end
 
 	player_last_point[player_index] = nil
+	player_last_entity[player_index] = nil
 	player_prev_fiqures[player_index] = {}
 	destroy_drawing_settings_gui(player)
 	destroy_speech_bubble_UI(player)
@@ -837,6 +875,7 @@ end
 local function on_player_left_game(event)
 	local player_index = event.player_index
 	player_last_point[player_index] = nil
+	player_last_entity[player_index] = nil
 	if player_prev_fiqures[player_index] then
 		remove_player_invisible_fiqures(player_index)
 		player_prev_fiqures[player_index] = nil
@@ -971,11 +1010,13 @@ local function link_data()
 	player_last_point = global.player_last_point
 	player_prev_fiqures = global.player_prev_fiqures
 	player_check_colors = global.player_check_colors
+	player_last_entity = global.player_last_entity
 end
 
 local function update_global_data()
 	global.player_last_point = {}
 	global.player_check_colors = {}
+	global.player_last_entity = {}
 	global.player_prev_fiqures = global.player_prev_fiqures or {}
 
 	link_data()
