@@ -7,10 +7,10 @@ Date: 2021-07-12
 Version: 0.6.1
 Date: 2021-07-12
   Features:
-    - Added binding to entities for the light tool (fancy custom lights)
+    - Added binding to entities for the light tool (fancy custom lights, try it with a train/car etc)
   Bugfixes:
     - Improved stability of the recolor tool
-    - Added translation the light tool
+    - Added translation for the light tool
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.0
 Date: 2021-07-12
