@@ -17,17 +17,20 @@ local player_check_colors
 --#region Constants
 local ABS = math.abs
 local MAX_BRUSH_SIZE = 150
+local MAX_LIGHT_TOOL_SIZE = 100
 local MAX_DISTANCE = 150
 local TOOLS = {
 	"pen",
 	"circle",
 	"rectangle",
-	"speech-bubble"
+	"speech-bubble",
+	"light"
 }
 local PEN_ID = 1
 local CIRCLE_ID = 2
 -- local RECTANGLE_ID = 3
 local SPEECH_BUBBLE_ID = 4
+local LIGHT_ID = 5
 --#endregion
 
 
@@ -132,7 +135,7 @@ local function draw_rectangle(surface, player, left_top, right_bottom, color, fi
 		draw_on_ground = true,
 		only_in_alt_mode = true
 	})
-	if player.mod_settings["brush-tools_dev-mode"].value then
+	if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 		local message = "rendering.draw_rectangle{\n" ..
 			"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
 			"	left_top = {" .. left_top.x .. ", " .. left_top.y .. "},\n" ..
@@ -261,7 +264,7 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 			alignment = "center",
 			only_in_alt_mode = true
 		})
-		if player.mod_settings["brush-tools_dev-mode"].value then
+		if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 			local message = "rendering.draw_text{\n" ..
 				"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
 				"	color = " .. serpent.line(color) .. ",\n" ..
@@ -296,6 +299,8 @@ local function set_new_tool(player, tool_name, tool_id)
 		local count = 12
 		if tool_id == SPEECH_BUBBLE_ID then
 			count = 8
+		elseif tool_id == LIGHT_ID then
+			count = MAX_LIGHT_TOOL_SIZE
 		end
 		local stack_spec = {name = tool_name, count = count}
 		-- insert into main inventory first, then transfer and set the hand location
@@ -482,7 +487,7 @@ local function on_script_trigger_effect(event)
 				draw_on_ground = true,
 				only_in_alt_mode = true
 			})
-			if player.mod_settings["brush-tools_dev-mode"].value then
+			if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 				local message = "rendering.draw_line{\n" ..
 					"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
 					"	color = " .. serpent.line(color) .. ",\n" ..
@@ -510,7 +515,7 @@ local function on_script_trigger_effect(event)
 				draw_on_ground = true,
 				only_in_alt_mode = true
 			})
-			if player.mod_settings["brush-tools_dev-mode"].value then
+			if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 				local message = "rendering.draw_circle{\n" ..
 					"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
 					"	radius = " .. distance .. ",\n" ..
@@ -522,6 +527,42 @@ local function on_script_trigger_effect(event)
 					"}\n"
 				game.write_file("brush-tools-output.lua", message, true, player.index)
 			end
+		end
+	elseif tool_id == LIGHT_ID then
+		if player.admin then
+			local distance = get_distance(prev_point_brush, target_position)
+			if distance > (MAX_DISTANCE / 2) then
+				player.print({"brush-tools.respons.big-distance"})
+			else
+				if color.r == 0 and color.g == 0 and color.b == 0 then
+					player.print("Color is black, change your color")
+				else
+					remeber_fiqure(player_index, rendering.draw_light{
+						surface = event.surface_index,
+						sprite = "utility/light_medium",
+						scale = distance / 3.4,
+						color = color,
+						intensity = brush_size / MAX_LIGHT_TOOL_SIZE,
+						target = prev_point_brush,
+						visible = true,
+						only_in_alt_mode = false
+					})
+					if player.mod_settings["brush-tools_dev-mode"].value then
+						local message = "rendering.draw_light{\n" ..
+							"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
+							" sprite = \"utility/light_cone\",\n" ..
+							"	scale = " .. distance / 3.4 .. ",\n" ..
+							"	color = " .. serpent.line(color) .. ",\n" ..
+							"	intensity = " .. brush_size / MAX_LIGHT_TOOL_SIZE .. ",\n" ..
+							"	target = {" .. prev_point_brush.x .. ", " .. prev_point_brush.y .. "},\n" ..
+							"	visible = true,\n" ..
+							"}\n"
+						game.write_file("brush-tools-output.lua", message, true, player.index)
+						end
+				end
+			end
+		else
+			player.print({"command-output.parameters-require-admin"})
 		end
 	end
 	rendering.destroy(prev_point_brush_id)
@@ -746,8 +787,8 @@ end
 
 local function delete_player_data(event)
 	local player_index = event.player_index
-	local prev_fiqures = player_prev_fiqures[player_index]
-	if prev_fiqures then
+
+	if player_prev_fiqures[player_index] then
 		remove_player_invisible_fiqures(player_index)
 		player_prev_fiqures[player_index] = nil
 	end
@@ -782,8 +823,7 @@ local function on_player_joined_game(event)
 	local player = game.get_player(player_index)
 	if not (player and player.valid) then return end
 
-	local prev_fiqures = player_prev_fiqures[player_index]
-	if prev_fiqures then
+	if player_prev_fiqures[player_index] then
 		remove_player_invisible_fiqures(player_index)
 	end
 
@@ -797,8 +837,7 @@ end
 local function on_player_left_game(event)
 	local player_index = event.player_index
 	player_last_point[player_index] = nil
-	local prev_fiqures = player_prev_fiqures[player_index]
-	if prev_fiqures then
+	if player_prev_fiqures[player_index] then
 		remove_player_invisible_fiqures(player_index)
 		player_prev_fiqures[player_index] = nil
 	end
@@ -813,8 +852,8 @@ end
 local function update_color_button(player_index)
 	local player = game.get_player(player_index)
 	local gui = player.gui
-	local rgb_button = gui.top.rgb_button
 	local colors_UI = gui.left.drawing_settings.colors
+	local rgb_button = gui.top.rgb_button
 	rgb_button.style.font_color = {
 		r = colors_UI.r_DC_slider.slider_value,
 		g = colors_UI.g_DC_slider.slider_value,
@@ -855,12 +894,14 @@ local function remove_paintings_all_command(cmd)
 		print("All paintings are removed")
 		return
 	end
+
 	local player = game.get_player(cmd.player_index)
 	if not (player and player.valid) then return end
 	if not player.admin then
 		player.print({"command-output.parameters-require-admin"})
 		return
 	end
+
 	rendering.clear()
 	player.print("All paintings are removed")
 end
@@ -937,30 +978,23 @@ local function update_global_data()
 	global.player_check_colors = {}
 	global.player_prev_fiqures = global.player_prev_fiqures or {}
 
-	for player_index, player in pairs(game.players) do -- TODO: replace it with global.player_prev_fiqures
-		local prev_fiqures = global.player_prev_fiqures[player_index]
-		if prev_fiqures then
+	link_data()
+
+	for player_index, _ in pairs(player_prev_fiqures) do
+		if player_prev_fiqures[player_index] then
 			remove_player_invisible_fiqures(player_index)
-			global.player_prev_fiqures[player_index] = nil
+			player_prev_fiqures[player_index] = nil
 		end
+		local player = game.get_player(player_index) --TODO: recheck
 		destroy_drawing_settings_gui(player)
 		destroy_speech_bubble_UI(player)
 	end
 end
 
-module.on_init = (function()
-	update_global_data()
-	link_data()
-end)
 
-module.on_load = (function()
-	link_data()
-end)
-
-module.on_configuration_changed = (function()
-	update_global_data()
-	link_data()
-end)
+module.on_init = update_global_data
+module.on_configuration_changed = update_global_data
+module.on_load = link_data
 
 --#endregion
 

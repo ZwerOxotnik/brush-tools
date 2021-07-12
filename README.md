@@ -85,6 +85,7 @@ Some icons from flaticon.com:
 
 * [Paint bucket](https://www.flaticon.com/free-icon/paint-bucket_483918)
 * [Pen](https://www.flaticon.com/free-icon/pen_1250925)
+* [Light bulb](https://www.flaticon.com/free-icon/lightbulb_702797) (Modified by ZwerOxotnik)
 
 Disclaimer
 ----------
