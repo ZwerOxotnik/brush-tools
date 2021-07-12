@@ -451,12 +451,20 @@ local function on_script_trigger_effect(event)
 
 	local is_entity = false
 	if tool_id == LIGHT_ID then
-		local selected_entity = player.selected
 		if player_last_entity[player_index] then
 			is_entity = true
-		elseif selected_entity and not selected_entity.type ~= "entity-ghost" then
-			player_last_entity[player_index] = selected_entity
-			return
+		else
+			local selected_entity = player.selected
+			if selected_entity then
+				if selected_entity.valid then
+					if selected_entity.type ~= "entity-ghost" then
+						player_last_entity[player_index] = selected_entity
+						return
+					end
+				else
+					return
+				end
+			end
 		end
 	end
 
@@ -551,7 +559,13 @@ local function on_script_trigger_effect(event)
 		end
 	elseif tool_id == LIGHT_ID then
 		if player.admin then
-			local target = player_last_entity[player_index] or prev_point_brush
+			local last_entity = player_last_entity[player_index]
+			if last_entity then
+				if not last_entity.valid then
+					return
+				end
+			end
+			local target = last_entity or prev_point_brush
 			local distance = get_distance(target.position or target, target_position)
 			if distance > (MAX_DISTANCE / 2) then
 				player.print({"brush-tools.respons.big-distance"})
