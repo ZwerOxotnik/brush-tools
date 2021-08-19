@@ -4,8 +4,7 @@ require("prototypes.tools")
 
 local default_gui = data.raw["gui-style"].default
 if default_gui.invisible_button == nil then
-	default_gui.invisible_button =
-	{
+	default_gui.invisible_button = {
 		type = "button_style",
 		font = "default-dialog-button",
 		size = 28,

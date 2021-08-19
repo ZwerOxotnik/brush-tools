@@ -1,5 +1,5 @@
 
-local module = {}
+local M = {}
 
 
 --#region Singleplayer data
@@ -1047,9 +1047,9 @@ local function update_global_data()
 end
 
 
-module.on_init = update_global_data
-module.on_configuration_changed = update_global_data
-module.on_load = link_data
+M.on_init = update_global_data
+M.on_configuration_changed = update_global_data
+M.on_load = link_data
 
 --#endregion
 
@@ -1057,7 +1057,7 @@ module.on_load = link_data
 -- TODO: add support of on_player_muted etc
 
 ---@type table<number|string, function>
-module.events = {
+M.events = {
 	[defines.events.on_lua_shortcut] = on_lua_shortcut,
 	[defines.events.on_script_trigger_effect] = on_script_trigger_effect,
 	[defines.events.on_player_selected_area] = on_player_selected_area,
@@ -1093,7 +1093,7 @@ module.events = {
 }
 
 ---@type table<number, function>
-module.on_nth_tick = {
+M.on_nth_tick = {
 	[50] = function()
 		for player_index, _ in pairs(player_check_colors) do
 			pcall(update_color_button, player_index)
@@ -1101,10 +1101,13 @@ module.on_nth_tick = {
 	end
 }
 
-commands.add_command("remove-paintings", {"brush-tools-commands.description.remove-paintings"}, remove_paintings_command)
-commands.add_command("remove-all-paintings", {"brush-tools-commands.description.remove-all-paintings"}, remove_paintings_all_command)
-commands.add_command("count-paintings", {"brush-tools-commands.count-paintings"}, count_paintings_command)
-commands.add_command("count-all-paintings", {"brush-tools-commands.count-all-paintings"}, count_all_paintings_command)
-commands.add_command("delete-brush-tools-UI", {"brush-tools-commands.delete_UI"}, delete_UI_command)
+M.add_commands = function ()
+	commands.add_command("remove-paintings", {"brush-tools-commands.description.remove-paintings"}, remove_paintings_command)
+	commands.add_command("remove-all-paintings", {"brush-tools-commands.description.remove-all-paintings"}, remove_paintings_all_command)
+	commands.add_command("count-paintings", {"brush-tools-commands.count-paintings"}, count_paintings_command)
+	commands.add_command("count-all-paintings", {"brush-tools-commands.count-all-paintings"}, count_all_paintings_command)
+	commands.add_command("delete-brush-tools-UI", {"brush-tools-commands.delete_UI"}, delete_UI_command)
+end
 
-return module
+
+return M
