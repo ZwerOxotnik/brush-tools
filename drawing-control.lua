@@ -56,10 +56,10 @@ local function remeber_fiqure(player_index, new_id)
 		if id and rendering.is_valid(id) then
 			if rendering.get_visible(id) == false then -- TODO: check
 				rendering.destroy(id)
-				prev_fiqures[key] = nil
+				table.remove(prev_fiqures, key)
 			end
 		else
-			prev_fiqures[key] = nil
+			table.remove(prev_fiqures, key)
 		end
 	end
 
@@ -70,7 +70,7 @@ local function remeber_fiqure(player_index, new_id)
 		end
 		prev_fiqures[count] = new_id
 	else
-		prev_fiqures[count + 1] = new_id
+		table.insert(prev_fiqures, new_id)
 	end
 end
 
