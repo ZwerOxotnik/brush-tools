@@ -1,7 +1,12 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.7.0
+Version: 0.7.1
 Date: 2021-08-19
   Changes:
+    - Added a special scenario
+---------------------------------------------------------------------------------------------------
+Version: 0.7.0
+Date: 2021-08-19
+  Features:
     - It's possible to take full control of this mod outside this mod
   Notes:
     - Example:
