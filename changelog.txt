@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.7.0
+Date: 2021-08-19
+  Changes:
+    - It's possible to take full control of this mod outside this mod
+  Notes:
+    - Example:
+    - if script.active_mods["brush-tools"] then
+    -   local event_handler = require("event_handler")
+    -   event_handler.add_lib(require("__brush-tools__/drawing-control"))
+    - end
+---------------------------------------------------------------------------------------------------
 Version: 0.6.7
 Date: 2021-08-19
   Bugfixes:

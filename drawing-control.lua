@@ -35,6 +35,12 @@ local LIGHT_ID = 5
 --#endregion
 
 
+if script.mod_name ~= "brush-tools" then
+	remote.remove_interface("disable-brush-tools")
+	remote.add_interface("disable-brush-tools", {}) -- trying to disable another mod
+end
+
+
 --#region Utilities
 
 ---@param name string
