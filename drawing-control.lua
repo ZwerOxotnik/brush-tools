@@ -37,7 +37,11 @@ local LIGHT_ID = 5
 
 if script.mod_name ~= "brush-tools" then
 	remote.remove_interface("disable-brush-tools")
-	remote.add_interface("disable-brush-tools", {}) -- trying to disable another mod
+	remote.add_interface("disable-brush-tools", {
+		get_source = function()
+			return script.mod_name
+		end
+	}) -- trying to disable another mod
 end
 
 
