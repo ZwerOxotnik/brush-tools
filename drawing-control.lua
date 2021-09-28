@@ -391,13 +391,8 @@ end
 
 --#region Functions of events
 
----Gives a brush tool to a player
-local function on_lua_shortcut(event)
-	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
-
-	local prototype_name = event.prototype_name
-	if prototype_name == "eraser-bt-shortcut" then
+local SHORTCUTS = {
+	["eraser-bt-shortcut"] = function(player)
 		set_service_tool(player, "eraser")
 		player_check_colors[player.index] = nil
 		local gui = player.gui
@@ -409,10 +404,12 @@ local function on_lua_shortcut(event)
 		if drawing_settings and drawing_settings.valid then
 			drawing_settings.destroy()
 		end
-	elseif prototype_name == "recolor-bt-shortcut" then
+	end,
+	["recolor-bt-shortcut"] = function(player)
 		set_service_tool(player, "recolor-bt")
 		create_button(player)
-	elseif prototype_name == "brush-bt-shortcut" then
+	end,
+	["brush-bt-shortcut"] = function(player)
 		local tool_name = check_stack(player.cursor_stack)
 		local tool_id = get_id_tool(tool_name)
 		if tool_id then
@@ -426,19 +423,23 @@ local function on_lua_shortcut(event)
 		else
 			set_new_tool(player, "pen", PEN_ID)
 		end
-	end
+	end,
+}
+
+---Gives a brush tool to a player
+local function on_lua_shortcut(event)
+	local f = SHORTCUTS[event.prototype_name]
+	if f then f(game.get_player(event.player_index)) end
 end
 
 ---Trying to draw something by using a brush tool
 local function on_script_trigger_effect(event)
-	if not event.source_entity then return end -- doesn't work with players who don't have characters
+	if event.source_entity == nil then return end -- doesn't work with players who don't have characters
 	local tool_name = event.effect_id
 	local tool_id = get_id_tool(tool_name)
 	if tool_id == nil then return end
 
 	local entity = event.source_entity
-	if not entity.valid then return end
-
 	entity.insert({name = tool_name})
 	local target_position = event.target_position
 	local brush_size = entity.get_item_count(tool_name)
@@ -622,7 +623,6 @@ end
 ---Reduces size of selected brush tool
 local function decrease_size(event, count)
 	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
 	local tool_name = check_stack(player.cursor_stack)
 	if not (tool_name and get_id_tool(tool_name)) then return end
 
@@ -638,7 +638,6 @@ end
 ---Increases size of selected brush tool
 local function increase_size(event, count)
 	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
 	local tool_name = check_stack(player.cursor_stack)
 	local tool_id = get_id_tool(tool_name)
 	if not (tool_name and tool_id) then return end
@@ -672,7 +671,6 @@ end
 
 local function select_next_brush_tool(event)
 	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
 	local tool_name = check_stack(player.cursor_stack)
 	local tool_id = get_id_tool(tool_name)
 	if not (tool_name and tool_id) then return end
@@ -687,29 +685,13 @@ local function select_next_brush_tool(event)
 	set_new_tool(player, tool_name, tool_id)
 end
 
----Trying to draw or paint or remove fiqures
-local function on_player_selected_area(event)
-	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
+local TOOLS_ON_SELECTING = {
+	["recolor-bt"] = function(event, player)
+		local area = event.area
+		local right_bottom = area.right_bottom
+		local left_top = area.left_top
+		local surface = event.surface
 
-	local right_bottom = event.area.right_bottom
-	local left_top = event.area.left_top
-	local surface = event.surface
-	local tool_name = event.item
-	local is_tool = false
-	if tool_name == "rectangle" then
-		is_tool = true
-		local distance = get_distance(left_top, right_bottom)
-		if distance > MAX_DISTANCE then
-			player.print({"brush-tools.respons.big-distance"})
-		else
-			draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player))
-		end
-	elseif tool_name == "eraser" then
-		is_tool = true
-		erase_from_surface(surface, right_bottom, left_top)
-	elseif tool_name == "recolor-bt" then
-		is_tool = true
 		-- TODO: It must be optimized better
 		-- Removes drawings in selected area
 		local color = get_tool_color(player)
@@ -746,10 +728,41 @@ local function on_player_selected_area(event)
 				break
 			end
 		end
-	end
 
-	-- TODO: recheck it. Perhaps, it must be in another place
-	if is_tool then
+		-- TODO: refactor
+		local id = player_last_point[event.player_index]
+		if id then
+			player_last_point[event.player_index] = nil
+			if rendering.is_valid(id) then
+				rendering.destroy(id)
+			end
+		end
+	end,
+	["eraser"] = function(event, player)
+		local area = event.area
+		erase_from_surface(event.surface, area.right_bottom, area.left_top)
+
+		-- TODO: refactor
+		local id = player_last_point[event.player_index]
+		if id then
+			player_last_point[event.player_index] = nil
+			if rendering.is_valid(id) then
+				rendering.destroy(id)
+			end
+		end
+	end,
+	["rectangle"] = function(event, player)
+		local area = event.area
+		local right_bottom = area.right_bottom
+		local left_top = area.left_top
+		local distance = get_distance(left_top, right_bottom)
+		if distance > MAX_DISTANCE then
+			player.print({"brush-tools.respons.big-distance"})
+		else
+			draw_rectangle(event.surface, player, left_top, right_bottom, get_tool_color(player))
+		end
+
+		-- TODO: refactor
 		local id = player_last_point[event.player_index]
 		if id then
 			player_last_point[event.player_index] = nil
@@ -758,33 +771,35 @@ local function on_player_selected_area(event)
 			end
 		end
 	end
+}
+
+---Trying to draw or paint or remove fiqures
+local function on_player_selected_area(event)
+	local f = TOOLS_ON_SELECTING[event.item]
+	if f then f(event, game.get_player(event.player_index)) end
 end
 
 ---Draw a rectangle
 local function on_player_alt_selected_area(event)
-	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
-
-	local right_bottom = event.area.right_bottom
-	local left_top = event.area.left_top
-	local surface = event.surface
-	local tool_name = event.item
-	if tool_name == "rectangle" then
-		draw_rectangle(surface, player, left_top, right_bottom, get_tool_color(player), true)
+	if event.item == "rectangle" then
+		local area = event.area
+		local player = game.get_player(event.player_index)
+		draw_rectangle(event.surface, player, area.left_top, area.right_bottom, get_tool_color(player), true)
 	end
 end
 
+local GUIS = {
+	["rgb_button"] = function(element, player)
+		toggle_drawing_settings_gui(player)
+	end,
+	["speech_bubble_add_text_button"] = function(element, player)
+		add_speech_bubble_text(player, element)
+	end,
+}
 local function on_gui_click(event)
 	local element = event.element
-	if not (element and element.valid) then return end
-	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
-
-	if element.name == "rgb_button" then
-		toggle_drawing_settings_gui(player)
-	elseif element.name == "speech_bubble_add_text_button" then
-		add_speech_bubble_text(player, element)
-	end
+	local f = GUIS[element.name]
+	if f then f(element, game.get_player(event.player_index)) end
 end
 
 ---We use update_color_button() instead of this slow method (left it as a reminder)
@@ -806,7 +821,6 @@ end
 ---Makes invisible previous fiqure
 local function undo(event)
 	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
 
 	local prev_fiqures = player_prev_fiqures[event.player_index] or sp_prev_fiqures
 	for i=#prev_fiqures, 1, -1 do
@@ -826,7 +840,6 @@ end
 ---Makes visible last invisible fiqure
 local function redo(event)
 	local player = game.get_player(event.player_index)
-	if not (player and player.valid) then return end
 
 	local prev_fiqures = player_prev_fiqures[event.player_index] or sp_prev_fiqures
 	for i=1, #prev_fiqures, 1 do
@@ -1068,11 +1081,11 @@ M.on_load = link_data
 
 ---@type table<number|string, function>
 M.events = {
-	[defines.events.on_lua_shortcut] = on_lua_shortcut,
-	[defines.events.on_script_trigger_effect] = on_script_trigger_effect,
-	[defines.events.on_player_selected_area] = on_player_selected_area,
-	[defines.events.on_player_alt_selected_area] = on_player_alt_selected_area,
-	[defines.events.on_gui_click] = on_gui_click,
+	[defines.events.on_lua_shortcut] = function(e) pcall(on_lua_shortcut, e) end,
+	[defines.events.on_script_trigger_effect] = function(e) pcall(on_script_trigger_effect, e) end,
+	[defines.events.on_player_selected_area] = function(e) pcall(on_player_selected_area, e) end,
+	[defines.events.on_player_alt_selected_area] = function(e) pcall(on_player_alt_selected_area, e) end,
+	[defines.events.on_gui_click] = function(e) pcall(on_gui_click, e) end,
 	[defines.events.on_player_created] = on_player_created,
 	[defines.events.on_player_joined_game] = on_player_joined_game,
 	[defines.events.on_player_left_game] = on_player_left_game,
@@ -1080,25 +1093,25 @@ M.events = {
 	[defines.events.on_player_changed_surface] = clear_player_data,
 	[defines.events.on_player_respawned] = clear_player_data,
 	-- [defines.events.on_gui_value_changed] = on_gui_value_changed, -- please, do not use it. It impacts UPS significantly
-	["undo-bt"] = undo,
-	["redo-bt"] = redo,
-	["-size-bt"] = function(e) decrease_size(e, 1) end,
-	["+size-bt"] = function(e) increase_size(e, 1) end,
-	["-10size-bt"] = function(e) decrease_size(e, 10) end,
-	["+10size-bt"] = function(e) increase_size(e, 10) end,
-	["select-prev-brush-tool"] = select_prev_brush_tool,
-	["select-next-brush-tool"] = select_next_brush_tool,
+	["undo-bt"] = function(e) pcall(undo, e) end,
+	["redo-bt"] = function(e) pcall(redo, e) end,
+	["-size-bt"] = function(e) pcall(decrease_size, e, 1) end,
+	["+size-bt"] = function(e) pcall(increase_size, e, 1) end,
+	["-10size-bt"] = function(e) pcall(decrease_size, e, 10) end,
+	["+10size-bt"] = function(e) pcall(increase_size, e, 10) end,
+	["select-prev-brush-tool"] = function(e) pcall(select_prev_brush_tool, e) end,
+	["select-next-brush-tool"] = function(e) pcall(select_next_brush_tool, e) end,
 	["give-paint-bt"] = function(event)
 		event.prototype_name = "brush-bt-shortcut"
-		on_lua_shortcut(event)
+		pcall(on_lua_shortcut, event)
 	end,
 	["give-eraser-bt"] = function(event)
 		event.prototype_name = "eraser-bt-shortcut"
-		on_lua_shortcut(event)
+		pcall(on_lua_shortcut, event)
 	end,
 	["give-recolor-bt"] = function(event)
 		event.prototype_name = "recolor-bt-shortcut"
-		on_lua_shortcut(event)
+		pcall(on_lua_shortcut, event)
 	end,
 }
 
