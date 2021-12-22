@@ -1,4 +1,3 @@
-local event_handler = require("event_handler")
 local module = require("drawing-control")
 
 if remote.interfaces["disable-brush-tools"] then
@@ -10,4 +9,4 @@ if remote.interfaces["disable-brush-tools"] then
 	module.add_commands = nil
 end
 
-event_handler.add_lib(module)
+require("__zk-lib__/static-libs/lualibs/event_handler_vZO.lua").add_lib(module)
