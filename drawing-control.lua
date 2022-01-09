@@ -948,6 +948,7 @@ local function on_player_left_game(event)
 	destroy_speech_bubble_UI(player)
 end
 
+-- TODO: optimize
 ---@param player_index number
 local function update_color_button(player_index)
 	local gui = game.get_player(player_index).gui
