@@ -6,12 +6,10 @@ data:extend({
 		order = "d-a-brush",
 		action = "lua",
 		toggleable = false,
-		icon = {
-			filename = "__brush-tools__/icons/pen-shortcut.png",
-			priority = "extra-high-no-scale",
-			size = 32,
-			flags = {"gui-icon"}
-		}
+		small_icon = "__brush-tools__/icons/pen-shortcut.png",
+		icon       = "__brush-tools__/icons/pen-shortcut.png",
+		small_icon_size = 32,
+		icon_size       = 32,
 	}, {
 		type = "shortcut",
 		name = "eraser-bt-shortcut",
@@ -19,12 +17,10 @@ data:extend({
 		order = "d-b-recolor",
 		action = "lua",
 		toggleable = false,
-		icon = {
-			filename = "__brush-tools__/icons/eraser.png",
-			priority = "extra-high-no-scale",
-			size = 32,
-			flags = {"gui-icon"}
-		}
+		small_icon = "__brush-tools__/icons/eraser.png",
+		icon       = "__brush-tools__/icons/eraser.png",
+		small_icon_size = 32,
+		icon_size       = 32,
 	}, {
 		type = "shortcut",
 		name = "recolor-bt-shortcut",
@@ -32,12 +28,10 @@ data:extend({
 		order = "d-b-recolor",
 		action = "lua",
 		toggleable = false,
-		icon = {
-			filename = "__brush-tools__/icons/recolor-bt.png",
-			priority = "extra-high-no-scale",
-			size = 32,
-			flags = {"gui-icon"}
-		}
+		small_icon = "__brush-tools__/icons/recolor-bt.png",
+		icon       = "__brush-tools__/icons/recolor-bt.png",
+		small_icon_size = 32,
+		icon_size       = 32,
 	}, {
 		type = "custom-input",
 		name = "-size-bt",
@@ -47,7 +41,7 @@ data:extend({
 		consuming = "game-only"
 	}, {
 		type = "custom-input",
-		name = "+size-bt",
+		name = "plus_size-bt",
 		order = "drawing+",
 		key_sequence = "CONTROL + mouse-wheel-up",
 		alternative_key_sequence = "CONTROL + KP_MULTIPLY",
@@ -61,7 +55,7 @@ data:extend({
 		consuming = "game-only"
 	}, {
 		type = "custom-input",
-		name = "+10size-bt",
+		name = "plus_10size-bt",
 		order = "drawing+10",
 		key_sequence = "CONTROL + SHIFT + mouse-wheel-up",
 		alternative_key_sequence = "CONTROL + SHIFT + KP_MULTIPLY",

@@ -21,18 +21,7 @@ local draw_circle = rendering.draw_circle
 local draw_light = rendering.draw_light
 local draw_text = rendering.draw_text
 local draw_line = rendering.draw_line
-local destroy_render = rendering.destroy
-local is_render_valid = rendering.is_valid
-local is_render_visible = rendering.get_visible
-local get_render_surface = rendering.get_surface
-local get_render_target = rendering.get_target
-local get_render_right_bottom = rendering.get_right_bottom
-local get_render_left_top = rendering.get_left_top
-local get_render_from = rendering.get_from
-local get_render_to = rendering.get_to
-local get_all_ids = rendering.get_all_ids
-local set_render_visible = rendering.set_visible
-local set_render_color = rendering.set_color
+local get_rendered_by_id = rendering.get_object_by_id
 local tremove = table.remove
 local MAX_BRUSH_SIZE = 150
 local MAX_LIGHT_TOOL_SIZE = 100
@@ -79,10 +68,10 @@ local function remeber_fiqure(player_index, new_id)
 	local prev_fiqures = player_prev_fiqures[player_index] or sp_prev_fiqures
 
 	for i=#prev_fiqures, 1, -1 do
-		local id = prev_fiqures[i]
-		if is_render_valid(id) then
-			if is_render_visible(id) == false then -- TODO: check
-				destroy_render(id)
+		local rendered = get_rendered_by_id(prev_fiqures[i])
+		if rendered.valid then
+			if rendered.visible == false then -- TODO: check
+				rendered.destroy()
 				tremove(prev_fiqures, i)
 			end
 		else
@@ -136,9 +125,9 @@ end
 local function remove_player_invisible_fiqures(player_index)
 	local prev_fiqures = player_prev_fiqures[player_index] or sp_prev_fiqures
 	for i=#prev_fiqures, 1, -1 do
-		local id = prev_fiqures[i]
-		if is_render_valid(id) and is_render_visible(id) == false then
-			destroy_render(id)
+		local rendered = get_rendered_by_id(prev_fiqures[i])
+		if rendered.valid and rendered.visible == false then
+			rendered.destroy()
 		end
 	end
 end
@@ -154,7 +143,7 @@ local function draw_rectangle_by_tool(surface, player, left_top, right_bottom, c
 	if not filled then
 		filled = brush_size >= MAX_BRUSH_SIZE
 	end
-	remeber_fiqure(player.index, draw_rectangle{
+	remeber_fiqure(player.index, draw_rectangle({
 		surface = surface,
 		left_top = left_top,
 		right_bottom = right_bottom,
@@ -164,7 +153,7 @@ local function draw_rectangle_by_tool(surface, player, left_top, right_bottom, c
 		visible = true,
 		draw_on_ground = true,
 		only_in_alt_mode = true
-	})
+	}).id)
 	if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 		local message = "rendering.draw_rectangle{\n" ..
 			"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
@@ -175,7 +164,7 @@ local function draw_rectangle_by_tool(surface, player, left_top, right_bottom, c
 			"	filled = " .. tostring(filled) .. ",\n" ..
 			"	visible = true,\n" ..
 			"}\n"
-		game.write_file("brush-tools-output.lua", message, true, player.index)
+		helpers.write_file("brush-tools-output.lua", message, true, player.index)
 	end
 end
 
@@ -284,7 +273,7 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 		player.print("Too long text")
 	else
 		local target_position = {main_table.target.x.caption, main_table.target.y.caption - brush_size / 3.2}
-		remeber_fiqure(player.index, draw_text{
+		remeber_fiqure(player.index, draw_text({
 			surface = player.surface,
 			color = color,
 			scale = brush_size,
@@ -293,7 +282,7 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 			visible = true,
 			alignment = "center",
 			only_in_alt_mode = true
-		})
+		}).id)
 		if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 			local message = "rendering.draw_text{\n" ..
 				"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
@@ -304,7 +293,7 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 				"	visible = true,\n" ..
 				"	alignment = \"center\",\n" ..
 				"}\n"
-			game.write_file("brush-tools-output.lua", message, true, player.index)
+			helpers.write_file("brush-tools-output.lua", message, true, player.index)
 		end
 	end
 	player.gui.center.speech_bubble_menu.destroy()
@@ -371,30 +360,30 @@ end
 local function erase_from_surface(surface, right_bottom, left_top)
 	-- TODO: It must be optimized better
 	local heaviness = 0
-	local ids = get_all_ids()
+	local ids = rendering.get_all_objects()
 	for i=1, #ids do
-		local id = ids[i]
-		if is_render_valid(id) and get_render_surface(id) == surface then
-			local target = get_render_target(id) -- https://lua-api.factorio.com/1.1.35/Concepts.html#ScriptRenderTarget
+		local rendered = get_rendered_by_id(ids[i])
+		if rendered.valid and rendered.surface == surface then
+			local target = rendered.target
 			if target then
 				if target.entity then
 					if find_point(right_bottom, left_top, target.entity.position) then
-						destroy_render(id)
+						rendered.destroy()
 					end
 				else
 					if find_point(right_bottom, left_top, target.position) then
-						destroy_render(id)
+						rendered.destroy()
 					end
 				end
 			else
 				-- TODO: optimize this!
-				local target1 = get_render_left_top(id) or get_render_from(id)
-				local target2 = get_render_right_bottom(id) or get_render_to(id)
+				local target1 = rendered.left_top or rendered.from
+				local target2 = rendered.right_bottom or rendered.to
 				if target1 and target1.position and target2 and target2.position then
 					if find_point(right_bottom, left_top, target1.position)
 						and find_point(right_bottom, left_top, target2.position)
 					then
-						destroy_render(id)
+						rendered.destroy()
 					end
 				end
 			end
@@ -505,7 +494,7 @@ local function on_script_trigger_effect(event)
 	if is_entity == false then
 		-- TODO: recheck it for circle
 		if prev_point_brush_id == nil then
-			player_last_point[player_index] = draw_circle{
+			player_last_point[player_index] = draw_circle({
 				surface = event.surface_index,
 				radius = 0.2,
 				color = color,
@@ -514,22 +503,25 @@ local function on_script_trigger_effect(event)
 				players = {player},
 				time_to_live = 60 * 20,
 				draw_on_ground = true
-			}
-			return
-		elseif is_render_valid(prev_point_brush_id) == false then
-			player_last_point[player_index] = draw_circle{
-				surface = event.surface_index,
-				radius = 0.2,
-				color = color,
-				filled = true,
-				target = target_position,
-				players = {player},
-				time_to_live = 60 * 20,
-				draw_on_ground = true
-			}
+			}).id
 			return
 		end
-		prev_point_brush = get_render_target(prev_point_brush_id).position
+
+		local rendered = get_rendered_by_id(prev_point_brush_id)
+		if rendered.valid == false then
+			player_last_point[player_index] = draw_circle({
+				surface = event.surface_index,
+				radius = 0.2,
+				color = color,
+				filled = true,
+				target = target_position,
+				players = {player},
+				time_to_live = 60 * 20,
+				draw_on_ground = true
+			}).id
+			return
+		end
+		prev_point_brush = rendered.target.position
 		if prev_point_brush == target_position then return end
 	end
 
@@ -538,7 +530,7 @@ local function on_script_trigger_effect(event)
 		if distance > MAX_DISTANCE then
 			player.print({"brush-tools.respons.big-distance"})
 		else
-			remeber_fiqure(player_index, draw_line{
+			remeber_fiqure(player_index, draw_line({
 				surface = event.surface_index,
 				color = color,
 				width = brush_size,
@@ -547,7 +539,7 @@ local function on_script_trigger_effect(event)
 				visible = true,
 				draw_on_ground = true,
 				only_in_alt_mode = true
-			})
+			}).id)
 			if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 				local message = "rendering.draw_line{\n" ..
 					"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
@@ -557,7 +549,7 @@ local function on_script_trigger_effect(event)
 					"	to = {" .. target_position.x .. ", " .. target_position.y .. "},\n" ..
 					"	visible = true,\n" ..
 					"}\n"
-				game.write_file("brush-tools-output.lua", message, true, player.index)
+				helpers.write_file("brush-tools-output.lua", message, true, player.index)
 			end
 		end
 	elseif tool_id == CIRCLE_ID then
@@ -565,7 +557,7 @@ local function on_script_trigger_effect(event)
 		if distance > HALF_MAX_DISTANCE then
 			player.print({"brush-tools.respons.big-distance"})
 		else
-			remeber_fiqure(player_index, draw_circle{
+			remeber_fiqure(player_index, draw_circle({
 				surface = event.surface_index,
 				radius = distance,
 				color = color,
@@ -575,7 +567,7 @@ local function on_script_trigger_effect(event)
 				visible = true,
 				draw_on_ground = true,
 				only_in_alt_mode = true
-			})
+			}).id)
 			if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 				local message = "rendering.draw_circle{\n" ..
 					"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
@@ -586,7 +578,7 @@ local function on_script_trigger_effect(event)
 					"	target = {" .. prev_point_brush.x .. ", " .. prev_point_brush.y .. "},\n" ..
 					"	visible = true,\n" ..
 					"}\n"
-				game.write_file("brush-tools-output.lua", message, true, player.index)
+				helpers.write_file("brush-tools-output.lua", message, true, player.index)
 			end
 		end
 	elseif tool_id == LIGHT_ID then
@@ -605,7 +597,7 @@ local function on_script_trigger_effect(event)
 				if color.r == 0 and color.g == 0 and color.b == 0 then
 					player.print("Color is black, change your color")
 				else
-					remeber_fiqure(player_index, draw_light{
+					remeber_fiqure(player_index, draw_light({
 						surface = event.surface_index,
 						sprite = "utility/light_medium",
 						scale = distance / 3.4,
@@ -614,7 +606,7 @@ local function on_script_trigger_effect(event)
 						target = target,
 						visible = true,
 						only_in_alt_mode = false
-					})
+					}).id)
 					if prev_point_brush and player.mod_settings["brush-tools_dev-mode"].value then
 						local message = "rendering.draw_light{\n" ..
 							"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
@@ -625,7 +617,7 @@ local function on_script_trigger_effect(event)
 							"	target = {" .. prev_point_brush.x .. ", " .. prev_point_brush.y .. "},\n" ..
 							"	visible = true,\n" ..
 							"}\n"
-						game.write_file("brush-tools-output.lua", message, true, player.index)
+						helpers.write_file("brush-tools-output.lua", message, true, player.index)
 						end
 				end
 			end
@@ -635,7 +627,8 @@ local function on_script_trigger_effect(event)
 	end
 
 	if prev_point_brush_id then
-		destroy_render(prev_point_brush_id)
+		local rendered = get_rendered_by_id(prev_point_brush_id)
+		rendered.destroy()
 		player_last_point[player_index] = nil
 	end
 	player_last_entity[player_index] = nil
@@ -718,29 +711,29 @@ local TOOLS_ON_SELECTING = {
 		local color = get_tool_color(player)
 		if color == nil then return end
 		local heaviness = 0
-		local ids = get_all_ids()
+		local ids = rendering.get_all_objects()
 		for i=1, #ids do
-			local id = ids[i]
-			if is_render_valid(id) and get_render_surface(id) == surface then
-				local target = get_render_target(id)
+			local rendered = get_rendered_by_id(ids[i])
+			if rendered.valid and rendered.surface == surface then
+				local target = rendered.target
 				if target then -- TODO: recheck
 					if target.entity then
 						if find_point(right_bottom, left_top, target.entity.position) then
-							set_render_color(id, color)
+							rendered.color = color
 						end
 					else
 						if find_point(right_bottom, left_top, target.position) then
-							set_render_color(id, color)
+							rendered.color = color
 						end
 					end
 				else
-					local target1 = get_render_left_top(id) or get_render_from(id)
-					local target2 = get_render_right_bottom(id) or get_render_to(id)
+					local target1 = rendered.left_top or rendered.from
+					local target2 = rendered.right_bottom or rendered.to
 					if target1 and target2 and target1.position and target2.position then
 						if find_point(right_bottom, left_top, target1.position)
 							and find_point(right_bottom, left_top, target2.position)
 						then
-							set_render_color(id, color)
+							rendered.color = color
 						end
 					end
 				end
@@ -756,8 +749,9 @@ local TOOLS_ON_SELECTING = {
 		local id = player_last_point[event.player_index]
 		if id then
 			player_last_point[event.player_index] = nil
-			if is_render_valid(id) then
-				destroy_render(id)
+			local rendered = get_rendered_by_id(id)
+			if rendered.valid then
+				rendered.destroy()
 			end
 		end
 	end,
@@ -769,8 +763,9 @@ local TOOLS_ON_SELECTING = {
 		local id = player_last_point[event.player_index]
 		if id then
 			player_last_point[event.player_index] = nil
-			if is_render_valid(id) then
-				destroy_render(id)
+			local rendered = get_rendered_by_id(id)
+			if rendered.valid then
+				rendered.destroy()
 			end
 		end
 	end,
@@ -789,8 +784,9 @@ local TOOLS_ON_SELECTING = {
 		local id = player_last_point[event.player_index]
 		if id then
 			player_last_point[event.player_index] = nil
-			if is_render_valid(id) then
-				destroy_render(id)
+			local rendered = get_rendered_by_id(id)
+			if rendered.valid then
+				rendered.destroy()
 			end
 		end
 	end
@@ -848,10 +844,10 @@ local function undo(event)
 
 	local prev_fiqures = player_prev_fiqures[player_index] or sp_prev_fiqures
 	for i=#prev_fiqures, 1, -1 do
-		local id = prev_fiqures[i]
-		if is_render_valid(id) then
-			if is_render_visible(id) then
-				set_render_visible(id, false)
+		local rendered = get_rendered_by_id(prev_fiqures[i])
+		if rendered.valid then
+			if rendered.visible then
+				rendered.visible = false
 				player.play_sound{path = "utility/undo", position = player.position, override_sound_type = "game-effect"}
 				break
 			end
@@ -867,10 +863,10 @@ local function redo(event)
 
 	local prev_fiqures = player_prev_fiqures[event.player_index] or sp_prev_fiqures
 	for i=1, #prev_fiqures do
-		local id = prev_fiqures[i]
-		if is_render_valid(id) then
-			if is_render_visible(id) == false then
-				set_render_visible(id, true)
+		local rendered = get_rendered_by_id(prev_fiqures[i])
+		if rendered.valid then
+			if not rendered.visible then
+				rendered.visible = true
 				player.play_sound{path = "utility/blueprint_selection_ended", position = player.position, override_sound_type = "game-effect"}
 				break
 			end
@@ -975,11 +971,11 @@ local function remove_paintings_command(cmd)
 
 	local heaviness = 0
 	local surface = player.surface
-	local ids = get_all_ids()
+	local ids = rendering.get_all_objects()
 	for i=1, #ids do
-		local id = ids[i]
-		if get_render_surface(id) == surface then -- TODO: check
-			destroy_render(id)
+		local rendered = get_rendered_by_id(ids[i])
+		if rendered.surface == surface then -- TODO: check
+			rendered.destroy()
 		end
 		heaviness = heaviness + 3
 		if heaviness > 60000 then
@@ -1017,10 +1013,10 @@ local function count_paintings_command(cmd)
 
 	local surface = player.surface
 	local count = 0
-	local ids = get_all_ids()
+	local ids = rendering.get_all_objects()
 	for i=1, #ids do
-		local id = ids[i]
-		if get_render_surface(id) == surface then
+		local rendered = get_rendered_by_id(ids[i])
+		if rendered.surface == surface then
 			count = count + 1
 		end
 	end
@@ -1030,12 +1026,12 @@ end
 
 local function count_all_paintings_command(cmd)
 	if cmd.player_index == 0 then
-		print("Paintings: " .. #get_all_ids())
+		print("Paintings: " .. #rendering.get_all_objects())
 		return
 	end
 	local player = game.get_player(cmd.player_index)
 	if not (player and player.valid) then return end
-	player.print("Paintings: " .. #get_all_ids())
+	player.print("Paintings: " .. #rendering.get_all_objects())
 end
 
 local function delete_UI_command(cmd)
@@ -1071,17 +1067,17 @@ end
 --#region Pre-game stage
 
 local function link_data()
-	player_last_point = global.player_last_point
-	player_prev_fiqures = global.player_prev_fiqures
-	player_check_colors = global.player_check_colors
-	player_last_entity = global.player_last_entity
+	player_last_point = storage.player_last_point
+	player_prev_fiqures = storage.player_prev_fiqures
+	player_check_colors = storage.player_check_colors
+	player_last_entity = storage.player_last_entity
 end
 
 local function update_global_data()
-	global.player_last_point = {}
-	global.player_check_colors = {}
-	global.player_last_entity = {}
-	global.player_prev_fiqures = global.player_prev_fiqures or {}
+	storage.player_last_point = {}
+	storage.player_check_colors = {}
+	storage.player_last_entity = {}
+	storage.player_prev_fiqures = storage.player_prev_fiqures or {}
 
 	link_data()
 
@@ -1120,12 +1116,12 @@ M.events = {
 	[defines.events.on_player_changed_surface] = clear_player_data,
 	[defines.events.on_player_respawned] = clear_player_data,
 	-- [defines.events.on_gui_value_changed] = on_gui_value_changed, -- please, do not use it. It impacts UPS significantly
-	["undo-bt"] = function(e) pcall(undo, e) end,
-	["redo-bt"] = function(e) pcall(redo, e) end,
-	["-size-bt"] = function(e) pcall(decrease_size, e, 1) end,
-	["+size-bt"] = function(e) pcall(increase_size, e, 1) end,
-	["-10size-bt"] = function(e) pcall(decrease_size, e, 10) end,
-	["+10size-bt"] = function(e) pcall(increase_size, e, 10) end,
+	["undo-bt"]  = function(e) pcall(undo, e) end,
+	["redo-bt"]  = function(e) pcall(redo, e) end,
+	["plus_size-bt"]   = function(e) pcall(increase_size, e, 1) end,
+	["plus_10size-bt"] = function(e) pcall(increase_size, e, 10) end,
+	["-10size-bt"]     = function(e) pcall(decrease_size, e, 10) end,
+	["-size-bt"]       = function(e) pcall(decrease_size, e, 1) end,
 	["select-prev-brush-tool"] = function(e) pcall(select_prev_brush_tool, e) end,
 	["select-next-brush-tool"] = function(e) pcall(select_next_brush_tool, e) end,
 	["give-paint-bt"] = function(event)

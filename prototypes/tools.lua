@@ -45,15 +45,27 @@ end
 local function create_paint_select_tool(name, stack_size)
 	local flags
 	if stack_size and stack_size == 1 then
-		flags = {"hidden", "not-stackable", "only-in-cursor", "spawnable"}
+		flags = {"not-stackable", "only-in-cursor", "spawnable"}
 	else
-		flags = {"hidden", "spawnable"}
+		flags = {"spawnable"}
 	end
+
 	data:extend({
 		{
 			type = "selection-tool",
 			name = name,
 			icon = "__brush-tools__/icons/" .. name .. ".png",
+			hidden = true,
+			select = {
+				border_color = {1, 1, 1},
+				mode = {"blueprint"},
+				cursor_box_type = "copy",
+			},
+			alt_select = {
+				border_color = {0, 1, 0},
+				mode = {"blueprint"},
+				cursor_box_type = "copy",
+			},
 			flags = flags,
 			icon_size = 32,
 			icon_mipmaps = nil,
