@@ -1,3 +1,6 @@
+---@param name string
+---@param cooldown number?
+---@param stack_size number?
 local function create_paint_tool(name, cooldown, stack_size)
 	data:extend({
 		{
@@ -41,7 +44,8 @@ local function create_paint_tool(name, cooldown, stack_size)
 	})
 end
 
----@param stack_size number
+---@param name string
+---@param stack_size number?
 local function create_paint_select_tool(name, stack_size)
 	local flags
 	if stack_size and stack_size == 1 then
