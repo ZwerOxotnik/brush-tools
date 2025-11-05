@@ -21,7 +21,7 @@ local draw_circle = rendering.draw_circle
 local draw_light = rendering.draw_light
 local draw_text = rendering.draw_text
 local draw_line = rendering.draw_line
-local get_rendered_by_id = rendering.get_object_by_id
+local get_object_by_id = rendering.get_object_by_id
 local tremove = table.remove
 local MAX_BRUSH_SIZE = 150
 local MAX_LIGHT_TOOL_SIZE = 100
@@ -62,13 +62,13 @@ end
 
 --#region Utilities
 
----@param	player_index number
+---@param player_index number
 ---@param new_id number
 local function remeber_fiqure(player_index, new_id)
 	local prev_fiqures = player_prev_fiqures[player_index] or sp_prev_fiqures
 
 	for i=#prev_fiqures, 1, -1 do
-		local rendered = get_rendered_by_id(prev_fiqures[i])
+		local rendered = get_object_by_id(prev_fiqures[i])
 		if rendered.valid then
 			if rendered.visible == false then -- TODO: check
 				rendered.destroy()
@@ -125,7 +125,7 @@ end
 local function remove_player_invisible_fiqures(player_index)
 	local prev_fiqures = player_prev_fiqures[player_index] or sp_prev_fiqures
 	for i=#prev_fiqures, 1, -1 do
-		local rendered = get_rendered_by_id(prev_fiqures[i])
+		local rendered = get_object_by_id(prev_fiqures[i])
 		if rendered.valid and rendered.visible == false then
 			rendered.destroy()
 		end
@@ -360,9 +360,9 @@ end
 local function erase_from_surface(surface, right_bottom, left_top)
 	-- TODO: It must be optimized better
 	local heaviness = 0
-	local ids = rendering.get_all_objects()
-	for i=1, #ids do
-		local rendered = get_rendered_by_id(ids[i])
+	local objects = rendering.get_all_objects()
+	for i=1, #objects do
+		local rendered = objects[i]
 		if rendered.valid and rendered.surface == surface then
 			local target = rendered.target
 			if target then
@@ -507,7 +507,7 @@ local function on_script_trigger_effect(event)
 			return
 		end
 
-		local rendered = get_rendered_by_id(prev_point_brush_id)
+		local rendered = get_object_by_id(prev_point_brush_id)
 		if rendered.valid == false then
 			player_last_point[player_index] = draw_circle({
 				surface = event.surface_index,
@@ -627,7 +627,7 @@ local function on_script_trigger_effect(event)
 	end
 
 	if prev_point_brush_id then
-		local rendered = get_rendered_by_id(prev_point_brush_id)
+		local rendered = get_object_by_id(prev_point_brush_id)
 		rendered.destroy()
 		player_last_point[player_index] = nil
 	end
@@ -711,9 +711,9 @@ local TOOLS_ON_SELECTING = {
 		local color = get_tool_color(player)
 		if color == nil then return end
 		local heaviness = 0
-		local ids = rendering.get_all_objects()
-		for i=1, #ids do
-			local rendered = get_rendered_by_id(ids[i])
+		local objects = rendering.get_all_objects()
+		for i=1, #objects do
+			local rendered = objects[i]
 			if rendered.valid and rendered.surface == surface then
 				local target = rendered.target
 				if target then -- TODO: recheck
@@ -749,7 +749,7 @@ local TOOLS_ON_SELECTING = {
 		local id = player_last_point[event.player_index]
 		if id then
 			player_last_point[event.player_index] = nil
-			local rendered = get_rendered_by_id(id)
+			local rendered = get_object_by_id(id)
 			if rendered.valid then
 				rendered.destroy()
 			end
@@ -763,7 +763,7 @@ local TOOLS_ON_SELECTING = {
 		local id = player_last_point[event.player_index]
 		if id then
 			player_last_point[event.player_index] = nil
-			local rendered = get_rendered_by_id(id)
+			local rendered = get_object_by_id(id)
 			if rendered.valid then
 				rendered.destroy()
 			end
@@ -784,7 +784,7 @@ local TOOLS_ON_SELECTING = {
 		local id = player_last_point[event.player_index]
 		if id then
 			player_last_point[event.player_index] = nil
-			local rendered = get_rendered_by_id(id)
+			local rendered = get_object_by_id(id)
 			if rendered.valid then
 				rendered.destroy()
 			end
@@ -844,7 +844,7 @@ local function undo(event)
 
 	local prev_fiqures = player_prev_fiqures[player_index] or sp_prev_fiqures
 	for i=#prev_fiqures, 1, -1 do
-		local rendered = get_rendered_by_id(prev_fiqures[i])
+		local rendered = get_object_by_id(prev_fiqures[i])
 		if rendered.valid then
 			if rendered.visible then
 				rendered.visible = false
@@ -863,7 +863,7 @@ local function redo(event)
 
 	local prev_fiqures = player_prev_fiqures[event.player_index] or sp_prev_fiqures
 	for i=1, #prev_fiqures do
-		local rendered = get_rendered_by_id(prev_fiqures[i])
+		local rendered = get_object_by_id(prev_fiqures[i])
 		if rendered.valid then
 			if not rendered.visible then
 				rendered.visible = true
@@ -971,9 +971,9 @@ local function remove_paintings_command(cmd)
 
 	local heaviness = 0
 	local surface = player.surface
-	local ids = rendering.get_all_objects()
-	for i=1, #ids do
-		local rendered = get_rendered_by_id(ids[i])
+	local objects = rendering.get_all_objects()
+	for i=1, #objects do
+		local rendered = objects[i]
 		if rendered.surface == surface then -- TODO: check
 			rendered.destroy()
 		end
@@ -1013,9 +1013,9 @@ local function count_paintings_command(cmd)
 
 	local surface = player.surface
 	local count = 0
-	local ids = rendering.get_all_objects()
-	for i=1, #ids do
-		local rendered = get_rendered_by_id(ids[i])
+	local objects = rendering.get_all_objects()
+	for i=1, #objects do
+		local rendered = objects[i]
 		if rendered.surface == surface then
 			count = count + 1
 		end
