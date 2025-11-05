@@ -95,4 +95,4 @@ THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
 License
 -------
 
-Copyright (c) 2021-2022, 2024 **[ZwerOxotnik](https://github.com/ZwerOxotnik)**
+Copyright (c) 2021-2022, 2024-2025 **[ZwerOxotnik](https://github.com/ZwerOxotnik)**

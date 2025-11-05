@@ -1,4 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.9.2
+Date: 2025-11-05
+  Bugfixes:
+    - Fixed eraser (api's wiki is a lie)
+    - Fixed stuck text's gui after using an eraser (in theory, not fully tested)
+  Features:
+    - All commands are stable and changable, but this mod requie "Better Commands" as a mod now
+  Changes:
+    - /count-paintings doesn't require admin rights anymore
+  Scripting:
+    - Improved support with "zk-lib" mod
+    - Added support with "gvv" mod
+---------------------------------------------------------------------------------------------------
 Version: 0.9.1
 Date: 2025-11-05
   Bugfixes:

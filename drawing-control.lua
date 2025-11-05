@@ -69,7 +69,7 @@ local function remeber_fiqure(player_index, new_id)
 
 	for i=#prev_fiqures, 1, -1 do
 		local rendered = get_object_by_id(prev_fiqures[i])
-		if rendered.valid then
+		if rendered and rendered.valid then
 			if rendered.visible == false then -- TODO: check
 				rendered.destroy()
 				tremove(prev_fiqures, i)
@@ -132,8 +132,8 @@ local function remove_player_invisible_fiqures(player_index)
 	end
 end
 
----@param surface table LuaSurface
----@param player table LuaPlayer
+---@param surface LuaSurface
+---@param player LuaPlayer
 ---@param left_top table position
 ---@param right_bottom table position
 ---@param color table color
@@ -253,11 +253,11 @@ local function create_speech_bubble_UI(player, target_position)
 end
 
 ---Creates text using LuaRendering
----@param player table LuaPlayer
----@param speech_bubble_add_text_button table GuiElement
+---@param player LuaPlayer
+---@param speech_bubble_add_text_button GuiElement
 local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 	local color = get_tool_color(player)
-	if color == nil then return end
+	if color == nil then return end -- TODO: recheck
 	local main_table = speech_bubble_add_text_button.parent
 	local brush_size = player.get_item_count("speech-bubble")
 	if brush_size < 1 then
@@ -283,6 +283,7 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 			alignment = "center",
 			only_in_alt_mode = true
 		}).id)
+
 		if player.admin and player.mod_settings["brush-tools_dev-mode"].value then
 			local message = "rendering.draw_text{\n" ..
 				"	surface = game.surfaces[\"" .. player.surface.name .. "\"],\n" ..
@@ -296,11 +297,12 @@ local function add_speech_bubble_text(player, speech_bubble_add_text_button)
 			helpers.write_file("brush-tools-output.lua", message, true, player.index)
 		end
 	end
+
 	player.gui.center.speech_bubble_menu.destroy()
 end
 
 ---Sets a brush tool for a player
----@param player table LuaPlayer
+---@param player LuaPlayer
 ---@param tool_name string
 ---@param tool_id number
 local function set_new_tool(player, tool_name, tool_id)
@@ -364,21 +366,45 @@ local function erase_from_surface(surface, right_bottom, left_top)
 	for i=1, #objects do
 		local rendered = objects[i]
 		if rendered.valid and rendered.surface == surface then
-			local target = rendered.target
-			if target then
-				if target.entity then
-					if find_point(right_bottom, left_top, target.entity.position) then
-						rendered.destroy()
+			if type(rendered) == "LuaRenderObject" then
+				local target = rendered.target
+				if target then
+					if target.entity then
+						if find_point(right_bottom, left_top, target.entity.position) then
+							rendered.destroy()
+						end
+					else
+						if find_point(right_bottom, left_top, target.position) then
+							rendered.destroy()
+						end
 					end
 				else
-					if find_point(right_bottom, left_top, target.position) then
-						rendered.destroy()
+					-- TODO: optimize this!
+					local target1 = rendered.left_top or rendered.from
+					local target2 = rendered.right_bottom or rendered.to
+					if target1 and target1.position and target2 and target2.position then
+						if find_point(right_bottom, left_top, target1.position)
+							and find_point(right_bottom, left_top, target2.position)
+						then
+							rendered.destroy()
+						end
 					end
 				end
 			else
 				-- TODO: optimize this!
-				local target1 = rendered.left_top or rendered.from
-				local target2 = rendered.right_bottom or rendered.to
+					local target1, target2
+				local _type = rendered.type
+				if _type == "line" then
+					target1 = rendered.from
+					target2 = rendered.to
+				elseif _type == "rectangle" then
+					target1 = rendered.left_top
+					target2 = rendered.right_bottom
+				elseif _type == "circle" or _type == "light" or _type == "text" then
+					if find_point(right_bottom, left_top, rendered.target.position) then
+						rendered.destroy()
+					end
+				end
 				if target1 and target1.position and target2 and target2.position then
 					if find_point(right_bottom, left_top, target1.position)
 						and find_point(right_bottom, left_top, target2.position)
@@ -961,13 +987,13 @@ end
 
 --#region Commands
 
-local function remove_paintings_command(cmd)
+function M.remove_paintings_command(cmd)
 	local player = game.get_player(cmd.player_index)
 	if not (player and player.valid) then return end
-	if not player.admin then
-		player.print({"command-output.parameters-require-admin"})
-		return
-	end
+	-- if not player.admin then -- disabled since Better Commands does that
+	-- 	player.print({"command-output.parameters-require-admin"})
+	-- 	return
+	-- end
 
 	local heaviness = 0
 	local surface = player.surface
@@ -985,7 +1011,7 @@ local function remove_paintings_command(cmd)
 	player.print("All paintings are removed on surface \"" .. surface.name .. "\"")
 end
 
-local function remove_paintings_all_command(cmd)
+function M.remove_all_paintings_command(cmd)
 	if cmd.player_index == 0 then
 		rendering.clear()
 		print("All paintings are removed")
@@ -1003,13 +1029,9 @@ local function remove_paintings_all_command(cmd)
 	player.print("All paintings are removed")
 end
 
-local function count_paintings_command(cmd)
+function M.count_paintings_command(cmd)
 	local player = game.get_player(cmd.player_index)
 	if not (player and player.valid) then return end
-	if not player.admin then
-		player.print({"command-output.parameters-require-admin"})
-		return
-	end
 
 	local surface = player.surface
 	local count = 0
@@ -1024,7 +1046,7 @@ local function count_paintings_command(cmd)
 	player.print("Paintings on this surface: " .. tostring(count))
 end
 
-local function count_all_paintings_command(cmd)
+function M.count_all_paintings_command(cmd)
 	if cmd.player_index == 0 then
 		print("Paintings: " .. #rendering.get_all_objects())
 		return
@@ -1034,16 +1056,16 @@ local function count_all_paintings_command(cmd)
 	player.print("Paintings: " .. #rendering.get_all_objects())
 end
 
-local function delete_UI_command(cmd)
+function M.delete_UI_command(cmd)
 	if cmd.player_index == 0 then
 		print("Deleted UIs")
 	else
 		local player = game.get_player(cmd.player_index)
 		if not (player and player.valid) then return end
-		if not player.admin then
-			player.print({"command-output.parameters-require-admin"})
-			return
-		end
+    -- if not player.admin then -- disabled since Better Commands does that
+    -- 	player.print({"command-output.parameters-require-admin"})
+    -- 	return
+    -- end
 		player.print("Deleted UIs")
 	end
 
@@ -1147,13 +1169,14 @@ M.on_nth_tick = {
 	end
 }
 
-M.add_commands = function ()
-	commands.add_command("remove-paintings", {"brush-tools-commands.description.remove-paintings"}, remove_paintings_command)
-	commands.add_command("remove-all-paintings", {"brush-tools-commands.description.remove-all-paintings"}, remove_paintings_all_command)
-	commands.add_command("count-paintings", {"brush-tools-commands.count-paintings"}, count_paintings_command)
-	commands.add_command("count-all-paintings", {"brush-tools-commands.count-all-paintings"}, count_all_paintings_command)
-	commands.add_command("delete-brush-tools-UI", {"brush-tools-commands.delete_UI"}, delete_UI_command)
-end
+
+M.commands = {
+	remove_paintings = M.remove_paintings_command,
+	remove_all_paintings = M.remove_all_paintings_command,
+	count_paintings = M.count_paintings_command,
+	count_all_paintings = M.count_all_paintings_command,
+	delete_brush_tools_UI = M.delete_UI_command,
+}
 
 
 return M
