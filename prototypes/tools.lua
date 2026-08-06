@@ -70,6 +70,7 @@ local function create_paint_select_tool(name, stack_size)
 				mode = {"blueprint"},
 				cursor_box_type = "copy",
 			},
+			ignore_cannot_select_entities = true,
 			flags = flags,
 			icon_size = 32,
 			icon_mipmaps = nil,
