@@ -1,6 +1,6 @@
 {
     "name": "brush-tools",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "factorio_version": "2.1",
     "title": "Brush tools [ALPHA]",
     "author": "ZwerOxotnik",
@@ -10,7 +10,7 @@
     "description": "See locale/*",
     "dependencies": [
       "zk-lib >= 0.10.0",
-      "BetterCommands >= 1.2.0",
+      "BetterCommands >= 1.6.1",
       "? gvv"
     ]
 }
